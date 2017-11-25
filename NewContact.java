@@ -1,8 +1,4 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package mychat;
 
 import java.awt.BorderLayout;
@@ -13,43 +9,43 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-/**
- *
- * @author Max
- */
-public class NewContact extends JFrame implements ActionListener {
-
+class NewContact extends JFrame implements ActionListener {
+    JFrame newFolderFrame;
     JTextField textFieldName;
     JTextField textFieldIP;
     JTextField textFieldPort;
-    JButton backButton, saveButton;
+    JTextField folderNameField;
+    JButton backButton;
+    JButton saveButton;
     File contactFile;
-    Path file;
+    Path file;   
 
     NewContact() {
         setTitle("New Contact");
         this.setSize(new Dimension(400, 300));
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        //JComboBox comboBox = new JComboBox();
-
+        JPanel northPanel = new JPanel();
+        northPanel.add(new JLabel("Choose contact folder"), BorderLayout.NORTH);
+        JComboBox comboBox = new JComboBox();
+        northPanel.add(comboBox, BorderLayout.SOUTH);
+        JButton newFolderButton = new JButton("Add new folder");
+        northPanel.add(newFolderButton, BorderLayout.EAST);
         JPanel textAreaPanel = new JPanel();
         textFieldName = new JTextField();
         textFieldIP = new JTextField();
         textFieldPort = new JTextField();
-
         GridLayout textLayout = new GridLayout(0, 1);
         textAreaPanel.setLayout(textLayout);
         textAreaPanel.add(new JLabel("name:"));
@@ -58,39 +54,35 @@ public class NewContact extends JFrame implements ActionListener {
         textAreaPanel.add(textFieldIP);
         textAreaPanel.add(new JLabel("Port:"));
         textAreaPanel.add(textFieldPort);
-
         //add(new JLabel("New Contact"), BorderLayout.NORTH);
+        add(northPanel, BorderLayout.NORTH);
         add(textAreaPanel, BorderLayout.CENTER);
-
         JPanel buttonPanel = new JPanel();
         GridLayout buttonLayout = new GridLayout(0, 2);
         buttonPanel.setLayout(buttonLayout);
         saveButton = new JButton("Save Contact");
         backButton = new JButton("Back");
-
         buttonPanel.add(saveButton);
         buttonPanel.add(backButton);
+        newFolderButton.addActionListener(this);
         saveButton.addActionListener(this);
         backButton.addActionListener(this);
-
         add(buttonPanel, BorderLayout.SOUTH);
-
         String fileName = "MyContacts.txt";
         File dir = new File("Contacts/");
         dir.mkdirs();
         contactFile = new File(dir, fileName);
         file = contactFile.toPath();
-
     }
 
     private void saveContact() throws IOException {
         ArrayList<String> lines = new ArrayList<String>();
         String name = textFieldName.getText();
-        name = name.replaceAll("\\s+",".");
+        name = name.replaceAll("\\s+", ".");
         String IP = textFieldIP.getText();
-        IP = IP.replaceAll("\\s+","");
+        IP = IP.replaceAll("\\s+", "");
         String port = textFieldPort.getText();
-        port = port.replaceAll("\\s+","");
+        port = port.replaceAll("\\s+", "");
         textFieldName.setText("");
         textFieldIP.setText("");
         textFieldPort.setText("");
@@ -99,16 +91,15 @@ public class NewContact extends JFrame implements ActionListener {
         //lines.add(port);
         String line = name + " " + IP + " " + port;
         lines.add(line);
-
         /*String fileName = "MyContacts.txt";
         File dir = new File("Contacts/");
         dir.mkdirs();
         File contactFile = new File(dir, fileName);
         Path file = contactFile.toPath(); */
-        if( contactFile.exists()){
-        Files.write(file, lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
-        }else{
-             Files.write(file, lines, Charset.forName("UTF-8"));
+        if (contactFile.exists()) {
+            Files.write(file, lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+        } else {
+            Files.write(file, lines, Charset.forName("UTF-8"));
         }
     }
 
@@ -121,8 +112,53 @@ public class NewContact extends JFrame implements ActionListener {
                 } catch (IOException ex) {
                     Logger.getLogger(NewContact.class.getName()).log(Level.SEVERE, null, ex);
                 }
+            } else if (((JButton) (ae.getSource())).getText().equals("Back")) {
+                try {
+                    StartWindow backToStartWindow = new StartWindow();
+                    this.dispose();
 
+                } catch (IOException ex) {
+                    Logger.getLogger(NewContact.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else if (((JButton) (ae.getSource())).getText().equals("Add new folder")) {
+                createNewFolderFrame();
+                this.dispose();
+            } else if (((JButton) (ae.getSource())).getText().equals("Back to new contact window")) {
+                NewContact newContact = new NewContact();
+                newContact.setVisible(true);
+                newFolderFrame.dispose();
+            } else if (((JButton) (ae.getSource())).getText().equals("Create new folder")) {
+                String fileName = folderNameField.getText();
+                File dir = new File("Contacts/");
+                dir.mkdirs();
+                contactFile = new File(dir, fileName);
+                file = contactFile.toPath();
             }
+
         }
+    }
+
+    /* This method will create the frame for entering new folders to the Contacts folder. */
+    void createNewFolderFrame() {
+        newFolderFrame = new JFrame();
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        newFolderFrame.setTitle("Create new folder");
+        newFolderFrame.setSize(new Dimension(400, 300));
+        newFolderFrame.setResizable(false);
+        JPanel northPanel = new JPanel();
+        JPanel southPanel = new JPanel();
+        JButton backButton = new JButton("Back to new contact window");
+        JButton newFolderButton = new JButton("Create new folder");
+        folderNameField = new JTextField(30);
+        newFolderFrame.add(northPanel, BorderLayout.NORTH);
+        northPanel.add(new JLabel("Enter folder name here:"), BorderLayout.NORTH);
+        northPanel.add(folderNameField, BorderLayout.SOUTH);
+        newFolderFrame.add(southPanel, BorderLayout.SOUTH);
+        southPanel.add(backButton, BorderLayout.WEST);
+        southPanel.add(newFolderButton, BorderLayout.EAST);
+        newFolderFrame.setVisible(true);
+        backButton.addActionListener(this);
+        newFolderButton.addActionListener(this);
+        newFolderFrame.pack();
     }
 }
