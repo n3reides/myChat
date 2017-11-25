@@ -1,22 +1,17 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package mychat;
 
-/**
- *
- * @author Max
- */
-public class Contact {
+
+class Contact {
     
-    String name;
-    String IP;
-    String Port;
-    
-    Contact(){
-        
+    private final String CONTACT_NAME;
+    private final String CONTACT_IP;
+    private final int CONTACT_PORT;
+
+    Contact(String name, String IP, int PORT) {
+        CONTACT_NAME = name;
+        CONTACT_IP = IP;
+        CONTACT_PORT = PORT;
     }
     
 }
