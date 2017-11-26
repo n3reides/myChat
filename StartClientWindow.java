@@ -30,10 +30,12 @@ final class StartClientWindow extends JFrame implements ActionListener {
         createContactBox();
 
         newContactButton = new JButton("Add new contact");
+        JButton backButton = new JButton("Back");
         JButton chooseFolderButton = new JButton("Choose contact folder");
         northPanel.add(new JLabel("Pick your contact folder"), BorderLayout.NORTH);
         northPanel.add(chooseFolderButton, BorderLayout.SOUTH);
         southPanel.add(newContactButton);
+        southPanel.add(backButton, BorderLayout.EAST);
         centerPanel.add(new JLabel("Choose contact"));
         centerPanel.add(contactBox);
         JButton connectButton = new JButton("Connect");
@@ -42,7 +44,7 @@ final class StartClientWindow extends JFrame implements ActionListener {
         centerPanel.add(connectButton, BorderLayout.SOUTH);
 
         chooseFolderButton.addActionListener(this);
-
+        backButton.addActionListener(this);
         newContactButton.addActionListener(this);
         add(northPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
@@ -94,13 +96,9 @@ final class StartClientWindow extends JFrame implements ActionListener {
                 this.dispose();
             } else if (((JButton) (ae.getSource())).getText().equals("Connect")) {
                 if (contactPicked != null) {
-                    try {
-                        String IP = contactPicked.CONTACT_IP;
-                        int port = contactPicked.CONTACT_PORT;
-                        Client newClient = new Client(IP, port);
-                    } catch (IOException ex) {
-                        Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                    String IP = contactPicked.getIP();
+                    int port = contactPicked.getPort();
+                    Client newClient = new Client(IP, port);
                 }
 
             } else if (((JButton) (ae.getSource())).getText().equals("Choose contact folder")) {
@@ -111,6 +109,10 @@ final class StartClientWindow extends JFrame implements ActionListener {
                 refreshComboBox();
 
             }
+             else if (((JButton) (ae.getSource())).getText().equals("Back")) {
+                     MainWindow newMainWindow = new MainWindow();
+                     dispose();
+                 }
         }
     }
 
