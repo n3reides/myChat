@@ -36,11 +36,15 @@ class StartWindow extends JFrame implements ActionListener {
         add(centerPanel, BorderLayout.CENTER);
         add(southPanel, BorderLayout.SOUTH);
         JComboBox contactFolderBox = new JComboBox();
-        JComboBox contactBox = new JComboBox();
+        // JComboBox contactBox = new JComboBox();
         button = new JButton("Add new contact");
         northPanel.add(contactFolderBox);
-        centerPanel.add(contactBox);
+      //  centerPanel.add(contactBox);
         southPanel.add(button);
+        String folderName = "MyContacts";
+        contactBox = new JComboBox(createContactList(folderName));
+        centerPanel.add(contactBox);
+        // centerPanel.add(connectButton, BorderLayout.SOUTH);
         contactFolderBox.addActionListener(this);
         contactBox.addActionListener(this);
         button.addActionListener(this);
@@ -55,10 +59,10 @@ class StartWindow extends JFrame implements ActionListener {
         if (ae.getSource() instanceof JComboBox) {
             JComboBox cb = (JComboBox) ae.getSource();
             String optionPicked = (String) cb.getSelectedItem();
-            /*       if
-            contactBox = new JComboBox(createContactList(folderName));
-            centerPanel.add(connectButton, BorderLayout.SOUTH);
-            this.pack();*/
+               /*    if
+            
+            
+            this.pack(); */
         } else if (ae.getSource() instanceof JButton) {
             NewContact newContact = new NewContact();
             newContact.setVisible(true);
@@ -88,7 +92,7 @@ class StartWindow extends JFrame implements ActionListener {
             IP_ADDRESSES.add(splitString[1]);
             PORTS.add(Integer.parseInt(splitString[2]));
         }
-        Contact[] contactList = new Contact[lines.size() - 1];
+        Contact[] contactList = new Contact[lines.size()];
         int i = 0;
         while (i < contactList.length) {
             contactList[i] = new Contact(NAMES.get(i), IP_ADDRESSES.get(i), PORTS.get(i));
