@@ -2,6 +2,8 @@ package mychat;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -170,7 +172,7 @@ class NewContactWindow extends JFrame implements ActionListener {
 
 
     /* This method will create the frame for entering new folders to the Contacts folder. */
-   void createNewFolderFrame() {
+    void createNewFolderFrame() {
         newFolderFrame = new JFrame();
         newFolderFrame.setLayout(new GridBagLayout());
         newFolderFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

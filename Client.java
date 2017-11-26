@@ -1,7 +1,9 @@
+
 package mychat;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.Socket;
+
 
 class Client {
     

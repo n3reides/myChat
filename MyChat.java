@@ -1,29 +1,28 @@
 package mychat;
+
+
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
 public class MyChat {
 
     //Olle Dahlstedt & Max Sonebäck
     // Uppgift 4; 2017-11-24
-    private static final int PORT = 8191; // 2^13 - 1, PRIME
 
     public static void main(String[] args) throws IOException {
-        boolean SERVER_STARTED = true;
-        if (!SERVER_STARTED) {
-            Server myServer = new Server(PORT);
-            SERVER_STARTED = !SERVER_STARTED;
-        } else {
-            StartWindow startWindow = new StartWindow();
-        }
-
+        MainWindow mainFrame = new MainWindow();
+        
     }
 
-    /* String IP = lines.get(1);
-            int PORT = Integer.parseInt(lines.get(2));
-            Client myClient = new Client(IP, PORT); 
-         NewContact newcontact = new NewContact();
-         newcontact.setVisible(true);*/
+
 }
-
-
-
 

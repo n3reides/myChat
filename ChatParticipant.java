@@ -1,13 +1,28 @@
-
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package mychat;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.io.*;
-import java.net.*;
-import java.util.logging.*;
-import javax.swing.*;
-
+import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.net.Socket;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+import javax.swing.ScrollPaneConstants;
 
 
 class ChatParticipant extends JPanel implements ActionListener, ObjectStreamListener {
@@ -40,7 +55,6 @@ class ChatParticipant extends JPanel implements ActionListener, ObjectStreamList
         textField.addActionListener(this);
         sendButton.addActionListener(this);
         closeButton.addActionListener(this);
-        
         mySocket = socket;
         myOutput = mySocket.getOutputStream();
         objectOutput = new ObjectOutputStream(myOutput);
@@ -60,7 +74,6 @@ class ChatParticipant extends JPanel implements ActionListener, ObjectStreamList
         textArea.setEditable(false);
         scrollPane = new JScrollPane(textArea);
         scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        
     }
 
     void addPanelsToFrame() {
