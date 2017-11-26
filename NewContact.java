@@ -127,13 +127,21 @@ class NewContact extends JFrame implements ActionListener {
                 NewContact newContact = new NewContact();
                 newContact.setVisible(true);
                 newFolderFrame.dispose();
-            } else if (((JButton) (ae.getSource())).getText().equals("Create new folder")) {
-                String fileName = folderNameField.getText();
-                File dir = new File("Contacts/");
-                dir.mkdirs();
-                contactFile = new File(dir, fileName);
-                file = contactFile.toPath();
-            }
+            }  else if (((JButton) (ae.getSource())).getText().equals("Create new folder")) {
+                try {
+                    String fileName = folderNameField.getText() +  ".txt";
+                    File dir = new File("Contacts/");
+                    String[] emptyStringArray;
+                    dir.mkdirs();
+                    contactFile = new File(dir, fileName);
+                    //     file = contactFile.;
+                    if (!contactFile.exists()) {
+                    contactFile.createNewFile();
+                    }
+                    
+                } catch (IOException ex) {
+                    Logger.getLogger(NewContact.class.getName()).log(Level.SEVERE, null, ex);
+                }
 
         }
     }
