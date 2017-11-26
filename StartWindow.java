@@ -54,19 +54,49 @@ class StartWindow extends JFrame implements ActionListener {
     //  String[] createContactFolderList() {
 
     // }
-    @Override
+   @Override
     public void actionPerformed(ActionEvent ae) {
-        if (ae.getSource() instanceof JComboBox) {
+        if (ae.getSource() instanceof JFileChooser) {
+            String folderName = (String) ae.toString();
+            System.out.println(folderName);
+            try {
+                contactBox = new JComboBox(createContactList(folderName));
+            } catch (IOException ex) {
+                Logger.getLogger(StartWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            JButton connectButton = new JButton();
+            connectButton.addActionListener(this);
+            centerPanel.add(contactBox);
+            centerPanel.add(connectButton, BorderLayout.SOUTH);
+            
+        }
+        else if (ae.getSource() instanceof JComboBox) {
             JComboBox cb = (JComboBox) ae.getSource();
-            String optionPicked = (String) cb.getSelectedItem();
-               /*    if
+            contactPicked = (Contact) cb.getSelectedItem();
             
             
-            this.pack(); */
         } else if (ae.getSource() instanceof JButton) {
+            if (((JButton) (ae.getSource())).getText().equals("Add new contact")) {
             NewContact newContact = new NewContact();
             newContact.setVisible(true);
             this.dispose();
+            }
+            else if (((JButton) (ae.getSource())).getText().equals("Connect")) {
+                if (contactPicked != null) {
+                    String IP = contactPicked.CONTACT_NAME;
+                    int PORT = contactPicked.CONTACT_PORT;
+                    Client newClient = new Client(IP, PORT);
+                }
+            }
+            else if (((JButton) (ae.getSource())).getText().equals("Choose contact folder")) {
+                JDialog chooseDialog = new JDialog();
+                chooseDialog.setSize(400,300);
+                JFileChooser contactFolderChooser = new JFileChooser();
+                chooseDialog.add(contactFolderChooser);
+               // int returnVal = contactFolderChooser.showOpenDialog(this);
+                chooseDialog.setVisible(true);
+                contactFolderChooser.addActionListener(this);
+            }
         }
     }
 
