@@ -7,15 +7,14 @@ import java.util.*;
 import java.util.logging.*;
 import javax.swing.*;
 
-class StartClientWindow extends JFrame implements ActionListener {
+final class StartClientWindow extends JFrame implements ActionListener {
 
     private final JButton newContactButton;
     private final JPanel northPanel;
     private final JPanel centerPanel;
     private final JPanel southPanel;
-    JComboBox contactBox;
-    JComboBox contactFolderBox;
-    Contact contactPicked;
+    private JComboBox contactBox;
+    private Contact contactPicked;
 
     StartClientWindow() throws IOException {
         setTitle("Start Window");
@@ -26,36 +25,24 @@ class StartClientWindow extends JFrame implements ActionListener {
         centerPanel = new JPanel();
         centerPanel.setLayout(new GridLayout(0, 1));
         southPanel = new JPanel();
-        
-        File dir = new File("Contacts/");
-        if(!dir.exists()) {
-            dir.mkdirs();
-        }
-        File contacts = new File(dir, "myContacts.txt");
-        if (!contacts.exists()) {
-            contacts.createNewFile();
-        }
-        
-        contactBox = new JComboBox(createContactList("myContacts.txt"));
-        ListCellRenderer renderer = new ContactCellRenderer();
-        contactBox.setRenderer(renderer);
-        contactPicked = (Contact) contactBox.getSelectedItem();
+
+        createContactsFolder();
+        createContactBox();
 
         newContactButton = new JButton("Add new contact");
-        JButton backButton = new JButton("Back");
         JButton chooseFolderButton = new JButton("Choose contact folder");
         northPanel.add(new JLabel("Pick your contact folder"), BorderLayout.NORTH);
         northPanel.add(chooseFolderButton, BorderLayout.SOUTH);
-        southPanel.add(newContactButton, BorderLayout.WEST);
-        southPanel.add(backButton, BorderLayout.EAST);
+        southPanel.add(newContactButton);
         centerPanel.add(new JLabel("Choose contact"));
         centerPanel.add(contactBox);
         JButton connectButton = new JButton("Connect");
         connectButton.addActionListener(this);
+        //centerPanel.add(contactBox);
         centerPanel.add(connectButton, BorderLayout.SOUTH);
 
         chooseFolderButton.addActionListener(this);
-        backButton.addActionListener(this);
+
         newContactButton.addActionListener(this);
         add(northPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
@@ -64,12 +51,42 @@ class StartClientWindow extends JFrame implements ActionListener {
         contactBox.addActionListener(this);
     }
 
+    void createContactsFolder() {
+        File dir = new File("Contacts/");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        File contacts = new File(dir, "myContacts.txt");
+        if (!contacts.exists()) {
+            try {
+                contacts.createNewFile();
+            } catch (IOException ex) {
+                Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    void createContactBox() {
+        try {
+            contactBox = new JComboBox(createContactList("myContacts.txt"));
+            ListCellRenderer renderer = new ContactCellRenderer();
+            contactBox.setRenderer(renderer);
+            contactPicked = (Contact) contactBox.getSelectedItem();
+        } catch (IOException ex) {
+            Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+    //  String[] createContactFolderList() {
+
+    // }
     @Override
     public void actionPerformed(ActionEvent ae) {
         if (ae.getSource() instanceof JComboBox) {
             JComboBox cb = (JComboBox) ae.getSource();
             contactPicked = (Contact) cb.getSelectedItem();
 
+            //this.pack();
         } else if (ae.getSource() instanceof JButton) {
             if (((JButton) (ae.getSource())).getText().equals("Add new contact")) {
                 NewContactWindow newContact = new NewContactWindow();
@@ -77,11 +94,13 @@ class StartClientWindow extends JFrame implements ActionListener {
                 this.dispose();
             } else if (((JButton) (ae.getSource())).getText().equals("Connect")) {
                 if (contactPicked != null) {
-                    String IP = contactPicked.getIP();
-                    System.out.println(IP);
-                    int port = contactPicked.getPort();
-                    System.out.println(port);
-                    Client newClient = new Client(IP, port);
+                    try {
+                        String IP = contactPicked.CONTACT_IP;
+                        int port = contactPicked.CONTACT_PORT;
+                        Client newClient = new Client(IP, port);
+                    } catch (IOException ex) {
+                        Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
 
             } else if (((JButton) (ae.getSource())).getText().equals("Choose contact folder")) {
@@ -89,35 +108,35 @@ class StartClientWindow extends JFrame implements ActionListener {
                 if (!dir.exists()) {
                     dir.mkdirs();
                 }
-                JFileChooser contactFolderChooser = new JFileChooser("Contacts/");
-                int returnVal = contactFolderChooser.showOpenDialog(null);
-                if (returnVal == JFileChooser.APPROVE_OPTION) {
-                    try {
-                        File selectedFile = contactFolderChooser.getSelectedFile();
-                        String fileName = selectedFile.getName();
-                        System.out.println(fileName);
-                        Contact[] myContacts = createContactList(fileName);
-                        contactBox.removeAllItems();
-                        for (Contact aContact : myContacts) {
-                            contactBox.addItem(aContact);
-                        }
-                        
-                        revalidate();
-                        repaint();
-                    } catch (IOException ex) {
-                        Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                refreshComboBox();
 
-                }
-            }
-                else if (((JButton) (ae.getSource())).getText().equals("Back")) {
-                    System.out.println("hejehj");
-                    MainWindow newMainWindow = new MainWindow();
-                    dispose();
-                }
             }
         }
-    
+    }
+
+    private void refreshComboBox() {
+        JFileChooser contactFolderChooser = new JFileChooser("Contacts/");
+        int returnVal = contactFolderChooser.showOpenDialog(null);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = contactFolderChooser.getSelectedFile();
+            String fileName = selectedFile.getName();
+            System.out.println(fileName);
+            try {
+                Contact[] myContacts = createContactList(fileName);
+                contactBox.removeAllItems();
+                for (Contact aContact : myContacts) {
+                    contactBox.addItem(aContact);
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            revalidate();
+            repaint();
+
+        }
+
+    }
 
     Contact[] createContactList(String fileName) throws IOException {
         File file = new File("Contacts/", fileName);
@@ -146,9 +165,7 @@ class StartClientWindow extends JFrame implements ActionListener {
             contactList[i] = new Contact(NAMES.get(i), IP_ADDRESSES.get(i), PORTS.get(i));
             i++;
         }
-        //System.out.println(NAMES.get(0));
         return contactList;
     }
-    
 
 }
