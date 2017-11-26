@@ -1,28 +1,21 @@
-
 package mychat;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.util.*;
+import java.util.logging.*;
+import javax.swing.*;
 
 class StartWindow extends JFrame implements ActionListener {
-    
-    private final JButton button;
+
+    private final JButton newContactButton;
     private final JPanel northPanel;
     private final JPanel centerPanel;
     private final JPanel southPanel;
     JComboBox contactBox;
     JComboBox contactFolderBox;
+    Contact contactPicked;
 
     StartWindow() throws IOException {
         setTitle("Start Window");
@@ -31,78 +24,94 @@ class StartWindow extends JFrame implements ActionListener {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         northPanel = new JPanel();
         centerPanel = new JPanel();
+        centerPanel.setLayout(new GridLayout(0, 1));
         southPanel = new JPanel();
+        contactBox = new JComboBox(createContactList("myContacts.txt"));
+        ListCellRenderer renderer = new ContactCellRenderer();
+        contactBox.setRenderer(renderer);
+
+        newContactButton = new JButton("Add new contact");
+        JButton chooseFolderButton = new JButton("Choose contact folder");
+        northPanel.add(new JLabel("Pick your contact folder"), BorderLayout.NORTH);
+        northPanel.add(chooseFolderButton, BorderLayout.SOUTH);
+        southPanel.add(newContactButton);
+        centerPanel.add(new JLabel("Choose contact"));
+        centerPanel.add(contactBox);
+        JButton connectButton = new JButton("Connect");
+        connectButton.addActionListener(this);
+        //centerPanel.add(contactBox);
+        centerPanel.add(connectButton, BorderLayout.SOUTH);
+
+        chooseFolderButton.addActionListener(this);
+
+        newContactButton.addActionListener(this);
         add(northPanel, BorderLayout.NORTH);
         add(centerPanel, BorderLayout.CENTER);
         add(southPanel, BorderLayout.SOUTH);
-        JComboBox contactFolderBox = new JComboBox();
-        // JComboBox contactBox = new JComboBox();
-        button = new JButton("Add new contact");
-        northPanel.add(contactFolderBox);
-      //  centerPanel.add(contactBox);
-        southPanel.add(button);
-        String folderName = "MyContacts";
-        contactBox = new JComboBox(createContactList(folderName));
-        centerPanel.add(contactBox);
-        // centerPanel.add(connectButton, BorderLayout.SOUTH);
-        contactFolderBox.addActionListener(this);
-        contactBox.addActionListener(this);
-        button.addActionListener(this);
         setVisible(true);
-        pack();
+        contactBox.addActionListener(this);
     }
     //  String[] createContactFolderList() {
 
     // }
-   @Override
+    @Override
     public void actionPerformed(ActionEvent ae) {
-        if (ae.getSource() instanceof JFileChooser) {
-            String folderName = (String) ae.toString();
-            System.out.println(folderName);
-            try {
-                contactBox = new JComboBox(createContactList(folderName));
-            } catch (IOException ex) {
-                Logger.getLogger(StartWindow.class.getName()).log(Level.SEVERE, null, ex);
-            }
-            JButton connectButton = new JButton();
-            connectButton.addActionListener(this);
-            centerPanel.add(contactBox);
-            centerPanel.add(connectButton, BorderLayout.SOUTH);
-            
-        }
-        else if (ae.getSource() instanceof JComboBox) {
+        if (ae.getSource() instanceof JComboBox) {
             JComboBox cb = (JComboBox) ae.getSource();
             contactPicked = (Contact) cb.getSelectedItem();
-            
-            
+
+            //this.pack();
         } else if (ae.getSource() instanceof JButton) {
             if (((JButton) (ae.getSource())).getText().equals("Add new contact")) {
-            NewContact newContact = new NewContact();
-            newContact.setVisible(true);
-            this.dispose();
-            }
-            else if (((JButton) (ae.getSource())).getText().equals("Connect")) {
+                NewContact newContact = new NewContact();
+                newContact.setVisible(true);
+                this.dispose();
+            } else if (((JButton) (ae.getSource())).getText().equals("Connect")) {
                 if (contactPicked != null) {
-                    String IP = contactPicked.CONTACT_NAME;
-                    int PORT = contactPicked.CONTACT_PORT;
-                    Client newClient = new Client(IP, PORT);
+                    try {
+                        String IP = contactPicked.CONTACT_IP;
+                        int port = contactPicked.CONTACT_PORT;
+                        Client newClient = new Client(IP, port);
+                    } catch (IOException ex) {
+                        Logger.getLogger(StartWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
-            }
-            else if (((JButton) (ae.getSource())).getText().equals("Choose contact folder")) {
-                JDialog chooseDialog = new JDialog();
-                chooseDialog.setSize(400,300);
-                JFileChooser contactFolderChooser = new JFileChooser();
-                chooseDialog.add(contactFolderChooser);
-               // int returnVal = contactFolderChooser.showOpenDialog(this);
-                chooseDialog.setVisible(true);
-                contactFolderChooser.addActionListener(this);
+
+            } else if (((JButton) (ae.getSource())).getText().equals("Choose contact folder")) {
+                File dir = new File("Contacts/");
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                JFileChooser contactFolderChooser = new JFileChooser("Contacts/");
+                int returnVal = contactFolderChooser.showOpenDialog(null);
+                if (returnVal == JFileChooser.APPROVE_OPTION) {
+                    File selectedFile = contactFolderChooser.getSelectedFile();
+                    String fileName = selectedFile.getName();
+                    System.out.println(fileName);
+                    try {
+                        Contact[] myContacts = createContactList(fileName);
+                        contactBox.removeAllItems();
+                        for (Contact aContact : myContacts) {
+                            contactBox.addItem(aContact);
+                        }
+
+                        /* contactBox.revalidate();
+                        contactBox.repaint();
+                        System.out.println("try"); */
+                    } catch (IOException ex) {
+                        Logger.getLogger(StartWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+
+                    revalidate();
+                    repaint();
+
+                }
             }
         }
     }
 
     Contact[] createContactList(String fileName) throws IOException {
-        String textFileName = fileName + ".txt";
-        File file = new File("Contacts/", textFileName);
+        File file = new File("Contacts/", fileName);
         BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
         StringBuffer stringBuffer = new StringBuffer();
         String line;
@@ -128,7 +137,9 @@ class StartWindow extends JFrame implements ActionListener {
             contactList[i] = new Contact(NAMES.get(i), IP_ADDRESSES.get(i), PORTS.get(i));
             i++;
         }
+        //System.out.println(NAMES.get(0));
         return contactList;
     }
     
+
 }
