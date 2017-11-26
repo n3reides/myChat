@@ -2,6 +2,8 @@ package mychat;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -215,29 +217,27 @@ class NewContactWindow extends JFrame implements ActionListener {
     }
 
 
-     /* This method will create the frame for entering new folders to the Contacts folder. */
+    /* This method will create the frame for entering new folders to the Contacts folder. */
     void createNewFolderFrame() {
         newFolderFrame = new JFrame();
+        newFolderFrame.setLayout(new GridBagLayout());
         newFolderFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         newFolderFrame.setTitle("Create new folder");
         newFolderFrame.setSize(new Dimension(400, 300));
         newFolderFrame.setResizable(false);
         JPanel northPanel = new JPanel();
         northPanel.setLayout(new GridLayout(0,1));    
-        JPanel southPanel = new JPanel();
         JButton backButton = new JButton("Back to new contact window");
         JButton newFolderButton = new JButton("Create new folder");
         folderNameField = new JTextField();
         folderNameField.setPreferredSize( new Dimension( 200, 30 ) );
-        newFolderFrame.add(northPanel, BorderLayout.NORTH);
         northPanel.add(new JLabel("Enter folder name here:"));
         northPanel.add(folderNameField);
-        newFolderFrame.add(southPanel, BorderLayout.SOUTH);
-        southPanel.add(backButton, BorderLayout.EAST);
-        southPanel.add(newFolderButton, BorderLayout.WEST);
+        newFolderFrame.add(northPanel, new GridBagConstraints());
+        northPanel.add(newFolderButton);
+        northPanel.add(backButton);
         newFolderFrame.setVisible(true);
         backButton.addActionListener(this);
         newFolderButton.addActionListener(this);
-        // newFolderFrame.pack();
     }
 }
