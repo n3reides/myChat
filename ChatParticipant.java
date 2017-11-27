@@ -24,14 +24,17 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 
-
-class ChatParticipant extends JPanel implements ActionListener, ObjectStreamListener {
+/**
+ *
+ * @author olda4871
+ */
+class ChatParticipant extends JFrame implements ActionListener, ObjectStreamListener {
     
     private final String name;
-    private final JFrame chatFrame;
+    //private final JFrame chatFrame;
     private JPanel textAreaPanel;
     private JPanel northPanel;
-    private JScrollPane scrollPane;
+    private JScrollPane scrollPaneTextArea;
     private JTextField textField;
     private JTextArea textArea;
     private JButton sendButton;
@@ -41,17 +44,28 @@ class ChatParticipant extends JPanel implements ActionListener, ObjectStreamList
     private ObjectOutputStream objectOutput;
     private ObjectInputStream objectInput;
     private ObjectStreamManager myManager;
+    
+    private JPanel mainPanel;
+    private JPanel southPanel;
+    private JPanel eastPanel;
+    private JTextArea contactsArea;
+    private JScrollPane scrollPaneContactsArea;
 
     ChatParticipant(Socket socket, String NAME) throws IOException {
         name = NAME;
-        chatFrame = new JFrame();
+        /*chatFrame = new JFrame();
         chatFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        chatFrame.setResizable(false);
+        chatFrame.setResizable(false); */
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(400,300);
+        setResizable(false);
+        setVisible(true);
         createMisc();
         createPanels();
-        addPanelsToFrame();
-        chatFrame.setVisible(true);
-        chatFrame.pack();
+        addContentToPanels();
+        //addPanelsToFrame();
+        /*chatFrame.setVisible(true);*/
+        pack();
         textField.addActionListener(this);
         sendButton.addActionListener(this);
         closeButton.addActionListener(this);
@@ -71,34 +85,57 @@ class ChatParticipant extends JPanel implements ActionListener, ObjectStreamList
         sendButton = new JButton("Send");
         closeButton = new JButton("Close");
         textArea = new JTextArea(rows, columns);
+        textArea.setLineWrap (true);
         textArea.setEditable(false);
-        scrollPane = new JScrollPane(textArea);
-        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        contactsArea = new JTextArea(rows, 10);
+        contactsArea.setEditable(false);
+        scrollPaneContactsArea= new JScrollPane(contactsArea);
+        scrollPaneContactsArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPaneTextArea = new JScrollPane(textArea);
+        scrollPaneTextArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+    }
+    
+    void addContentToPanels(){
+        //mainPanel.add(textArea, BorderLayout.WEST);
+        mainPanel.add(scrollPaneTextArea, BorderLayout.CENTER);
+        //eastPanel.add(contactsArea,BorderLayout.CENTER);
+        eastPanel.add(scrollPaneContactsArea, BorderLayout.EAST);
+        southPanel.add(closeButton,BorderLayout.WEST);
+        southPanel.add(textField, BorderLayout.CENTER);
+        southPanel.add(sendButton, BorderLayout.EAST);
     }
 
     void addPanelsToFrame() {
-        chatFrame.add(textField, BorderLayout.CENTER);
+        //add(mainPanel, BorderLayout.NORTH);
+        //add(southPanel, BorderLayout.SOUTH);
+        /*chatFrame.add(textField, BorderLayout.CENTER);
         chatFrame.add(sendButton, BorderLayout.EAST);
         chatFrame.add(closeButton, BorderLayout.WEST);
-        chatFrame.add(northPanel, BorderLayout.NORTH);
+        chatFrame.add(northPanel, BorderLayout.NORTH); */
     }
 
     void createPanels() {
-        textAreaPanel = new JPanel();
+        mainPanel = new JPanel(new BorderLayout());
+        southPanel = new JPanel(new BorderLayout());
+        eastPanel = new JPanel(new BorderLayout());
+        add(mainPanel, BorderLayout.WEST);
+        add(eastPanel, BorderLayout.EAST);
+        add(southPanel, BorderLayout.SOUTH);
+        /*textAreaPanel = new JPanel();
         northPanel = new JPanel();
         northPanel.add(textAreaPanel, BorderLayout.CENTER);
-        northPanel.add(scrollPane, BorderLayout.EAST);
+        northPanel.add(scrollPane, BorderLayout.EAST); */
     }
 
     public void send() throws IOException, ClassNotFoundException {
         try {
             System.out.println("vi är i CLIENT send");
-            String message = name + " säger: " + textField.getText();
+            String message = name + " : " + textField.getText();
             textField.setText("");
             objectOutput.writeObject(message);
             System.out.println("vi är i CLIENT send efter objectOutput.write");
             objectOutput.flush();
-            display(message);
+            //display(message);
         } catch (IOException e) {
             System.out.println("IOException in send");
         }
@@ -117,7 +154,8 @@ class ChatParticipant extends JPanel implements ActionListener, ObjectStreamList
                     objectOutput.writeObject(2);
                     objectOutput.flush();
                     mySocket.close();
-                    chatFrame.dispose();
+                    dispose();
+                    //chatFrame.dispose();
                 } catch (IOException ex) {
                     Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -151,7 +189,8 @@ class ChatParticipant extends JPanel implements ActionListener, ObjectStreamList
                     CloseDialog closeDialog = new CloseDialog();
                     closeDialog.setVisible(true);
                     mySocket.close();
-                    chatFrame.dispose();
+                    dispose();
+                    //chatFrame.dispose();
                 }
             } catch (IOException ex) {
                 Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
