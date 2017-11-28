@@ -36,7 +36,7 @@ class NewContactWindow extends JFrame implements ActionListener {
     private JFileChooser contactFolderChooser;
 
     NewContactWindow() {
-        setTitle("New Contact");
+        setTitle("New Chatroom");
         this.setSize(new Dimension(400, 300));
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -81,7 +81,7 @@ class NewContactWindow extends JFrame implements ActionListener {
 
         JPanel northPanel = new JPanel();
 
-        JButton chooseFolderButton = new JButton("Choose contact folder");
+        JButton chooseFolderButton = new JButton("Choose chatroom folder");
         JButton newFolderButton = new JButton("Add new folder");
         northPanel.add(chooseFolderButton, BorderLayout.WEST);
         northPanel.add(newFolderButton, BorderLayout.EAST);
@@ -90,7 +90,7 @@ class NewContactWindow extends JFrame implements ActionListener {
 
         JPanel buttonPanel = new JPanel();
 
-        JButton saveButton = new JButton("Save Contact");
+        JButton saveButton = new JButton("Save chatroom");
         JButton backButton = new JButton("Back");
         buttonPanel.add(saveButton);
         buttonPanel.add(backButton);
@@ -109,7 +109,7 @@ class NewContactWindow extends JFrame implements ActionListener {
         String name = textFieldName.getText();
         name = name.replaceAll("\\s+", ".");
         if (name.length() == 0) {
-            feedbackLabel.setText("Please enter a contact name");
+            feedbackLabel.setText("Please enter a chatroom name");
             return;
         }
         String IP = textFieldIP.getText();
@@ -157,7 +157,7 @@ class NewContactWindow extends JFrame implements ActionListener {
 
         if (ae.getSource() instanceof JButton) {
             switch (((JButton) (ae.getSource())).getText()) {
-                case "Save Contact":
+                case "Save chatroom":
                     try {
                         saveContact();
                     } catch (IOException ex) {
@@ -177,7 +177,7 @@ class NewContactWindow extends JFrame implements ActionListener {
                     createNewFolderFrame();
                     this.dispose();
                     break;
-                case "Back to new contact window":
+                case "Back to new chatroom window":
                     NewContactWindow newContact = new NewContactWindow();
                     newContact.setVisible(true);
                     newFolderFrame.dispose();
@@ -199,7 +199,7 @@ class NewContactWindow extends JFrame implements ActionListener {
                         Logger.getLogger(NewContactWindow.class.getName()).log(Level.SEVERE, null, ex);
                     }
                     break;
-                case "Choose contact folder":
+                case "Choose chatroom folder":
                     contactFolderChooser = new JFileChooser("Contacts/");
                     int returnVal = contactFolderChooser.showOpenDialog(this);
                     if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -231,7 +231,7 @@ class NewContactWindow extends JFrame implements ActionListener {
         newFolderFrame.setResizable(false);
         JPanel northPanel = new JPanel();
         northPanel.setLayout(new GridLayout(0,1));    
-        JButton backButton = new JButton("Back to new contact window");
+        JButton backButton = new JButton("Back to new chatroom window");
         JButton newFolderButton = new JButton("Create new folder");
         folderNameField = new JTextField();
         folderNameField.setPreferredSize( new Dimension( 200, 30 ) );

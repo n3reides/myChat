@@ -30,16 +30,16 @@ final class StartClientWindow extends JFrame implements ActionListener {
         createContactsFolder();
         createContactBox();
 
-        newContactButton = new JButton("Add new contact");
+        newContactButton = new JButton("Add new chatroom");
         JButton backButton = new JButton("Back");
         nameTextField = new JTextField();
         nameTextField.addActionListener(this);
-        JButton chooseFolderButton = new JButton("Choose contact folder");
-        northPanel.add(new JLabel("Pick your contact folder"), BorderLayout.NORTH);
+        JButton chooseFolderButton = new JButton("Choose chatroom folder");
+        northPanel.add(new JLabel("Pick your chatroom folder"), BorderLayout.NORTH);
         northPanel.add(chooseFolderButton, BorderLayout.SOUTH);
         southPanel.add(newContactButton);
         southPanel.add(backButton, BorderLayout.EAST);
-        centerPanel.add(new JLabel("Choose contact"));
+        centerPanel.add(new JLabel("Choose chatroom"));
         centerPanel.add(contactBox);
         centerPanel.add(new JLabel("Write your username"));
         centerPanel.add(nameTextField);
@@ -95,14 +95,14 @@ final class StartClientWindow extends JFrame implements ActionListener {
 
             //this.pack();
         } else if (ae.getSource() instanceof JButton) {
-            if (((JButton) (ae.getSource())).getText().equals("Add new contact")) {
+            if (((JButton) (ae.getSource())).getText().equals("Add new chatroom")) {
                 NewContactWindow newContact = new NewContactWindow();
                 newContact.setVisible(true);
                 this.dispose();
             } else if (((JButton) (ae.getSource())).getText().equals("Connect")) {
                 startNewClient();
 
-            } else if (((JButton) (ae.getSource())).getText().equals("Choose contact folder")) {
+            } else if (((JButton) (ae.getSource())).getText().equals("Choose chatroom folder")) {
                 File dir = new File("Contacts/");
                 if (!dir.exists()) {
                     dir.mkdirs();
