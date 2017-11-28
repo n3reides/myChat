@@ -33,6 +33,7 @@ final class StartClientWindow extends JFrame implements ActionListener {
         newContactButton = new JButton("Add new contact");
         JButton backButton = new JButton("Back");
         nameTextField = new JTextField();
+        nameTextField.addActionListener(this);
         JButton chooseFolderButton = new JButton("Choose contact folder");
         northPanel.add(new JLabel("Pick your contact folder"), BorderLayout.NORTH);
         northPanel.add(chooseFolderButton, BorderLayout.SOUTH);
@@ -103,8 +104,8 @@ final class StartClientWindow extends JFrame implements ActionListener {
                     String name = nameTextField.getText();
                     String IP = contactPicked.getIP();
                     int port = contactPicked.getPort();
-                    
-                    Client newClient = new Client(new Contact (name,IP, port));
+
+                    Client newClient = new Client(new Contact(name, IP, port));
                 }
 
             } else if (((JButton) (ae.getSource())).getText().equals("Choose contact folder")) {
@@ -114,13 +115,22 @@ final class StartClientWindow extends JFrame implements ActionListener {
                 }
                 refreshComboBox();
 
+            } else if (((JButton) (ae.getSource())).getText().equals("Back")) {
+                MainWindow newMainWindow = new MainWindow();
+                dispose();
             }
-             else if (((JButton) (ae.getSource())).getText().equals("Back")) {
-                     MainWindow newMainWindow = new MainWindow();
-                     dispose();
-                 }
+        } else if (ae.getSource() instanceof JTextField) {
+            if (contactPicked != null) {
+                String name = nameTextField.getText();
+                String IP = contactPicked.getIP();
+                int port = contactPicked.getPort();
+                Client newClient = new Client(new Contact(name, IP, port));
+                nameTextField.setText("");
+            }
         }
     }
+
+    
 
     private void refreshComboBox() {
         JFileChooser contactFolderChooser = new JFileChooser("Contacts/");

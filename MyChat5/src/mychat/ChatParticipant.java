@@ -8,6 +8,8 @@ package mychat;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -29,7 +31,7 @@ import javax.swing.ScrollPaneConstants;
  *
  * @author olda4871
  */
-class ChatParticipant extends JFrame implements ActionListener, ObjectStreamListener {
+class ChatParticipant extends JFrame implements ActionListener, ObjectStreamListener, WindowListener {
     
     private final String name;
     //private final JFrame chatFrame;
@@ -54,13 +56,14 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
     
     private final Contact thisContact;
 
-    ChatParticipant(Socket socket, Contact myContact) throws IOException {
+    ChatParticipant(Socket socket, Contact myContact) throws IOException  {
         thisContact = myContact;
         name = myContact.getName();
         /*chatFrame = new JFrame();
         chatFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         chatFrame.setResizable(false); */
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
         setSize(400,300);
         setResizable(false);
         setVisible(true);
@@ -73,6 +76,7 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
         textField.addActionListener(this);
         sendButton.addActionListener(this);
         closeButton.addActionListener(this);
+        addWindowListener(this);
         mySocket = socket;
         myOutput = mySocket.getOutputStream();
         objectOutput = new ObjectOutputStream(myOutput);
@@ -214,5 +218,39 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
             }
         }
     }
+
+    @Override
+    public void windowOpened(WindowEvent we) {
+        }
+
+    @Override
+    public void windowClosing(WindowEvent we) {
+        try {
+            objectOutput.writeObject(thisContact);
+        } catch (IOException ex) {
+            Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
+        }
+       }
+
+    @Override
+    public void windowIconified(WindowEvent we) {
+        }
+
+    @Override
+    public void windowDeiconified(WindowEvent we) {
+      }
+
+    @Override
+    public void windowActivated(WindowEvent we) {
+      }
+
+    @Override
+    public void windowDeactivated(WindowEvent we) {
+      }
+
+    @Override
+    public void windowClosed(WindowEvent we) {
+        
+       }
     
 }

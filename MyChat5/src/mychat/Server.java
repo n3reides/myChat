@@ -50,9 +50,20 @@ class Server implements ObjectStreamListener {
         }
     }
 
+    private void sendMessageToAllStreams(String message) {
+        for (ObjectOutputStream OS : outputStreamArray) {
+            try {
+                OS.writeObject(message);
+                OS.flush();
+            } catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
     @Override
     public void objectReceived(int number, Object object, Exception exception) {
-        System.out.println("We are in server OR");
+        //System.out.println("We are in server OR");
         if (exception == null) {
             if (object instanceof Contact) {
                 Contact client = (Contact) object;
@@ -61,11 +72,13 @@ class Server implements ObjectStreamListener {
                 //nameArray.add(name);
                 if (!isClientInContactArray(client)) {
                     contactArray.add(client);
+                } else {
+                    String leaveMessage = client.getName() + " has left the chat room.";
+                    sendMessageToAllStreams(leaveMessage);
                 }
                 uppdateConnectedClients();
 
-            }
-            /*for (ObjectOutputStream OS : outputStreamArray) {
+            } /*for (ObjectOutputStream OS : outputStreamArray) {
                 try {
                     //   System.out.println(nameArray.toString());
                     OS.writeObject(contactArray.clone());
@@ -73,21 +86,13 @@ class Server implements ObjectStreamListener {
                 } catch (IOException ex) {
                     Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
                 }
-            } */
-        } else if (object instanceof String) {
-            System.out.println("we have an object");
-            String message = (String) object;
-            for (ObjectOutputStream OS : outputStreamArray) {
-                try {
-                    OS.writeObject(message);
-                    OS.flush();
-                } catch (IOException ex) {
-                    Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-                }
+            } */ else if (object instanceof String) {
+                //System.out.println("we have an object");
+                String message = (String) object;
+                sendMessageToAllStreams(message);
 
             }
-
         }
-    }
 
+    }
 }
