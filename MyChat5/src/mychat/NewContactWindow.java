@@ -188,7 +188,6 @@ class NewContactWindow extends JFrame implements ActionListener {
                         File dir = new File("Contacts/");
                         dir.mkdirs();
                         contactFile = new File(dir, fileName);
-                        //     file = contactFile.;
                         if (!contactFile.exists()) {
                             contactFile.createNewFile();
                         }
