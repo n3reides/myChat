@@ -100,13 +100,8 @@ final class StartClientWindow extends JFrame implements ActionListener {
                 newContact.setVisible(true);
                 this.dispose();
             } else if (((JButton) (ae.getSource())).getText().equals("Connect")) {
-                if (contactPicked != null) {
-                    String name = nameTextField.getText();
-                    String IP = contactPicked.getIP();
-                    int port = contactPicked.getPort();
-
-                    Client newClient = new Client(new Contact(name, IP, port));
-                }
+                startNewClient();
+                
 
             } else if (((JButton) (ae.getSource())).getText().equals("Choose contact folder")) {
                 File dir = new File("Contacts/");
@@ -120,17 +115,22 @@ final class StartClientWindow extends JFrame implements ActionListener {
                 dispose();
             }
         } else if (ae.getSource() instanceof JTextField) {
-            if (contactPicked != null) {
+            startNewClient();
+                
+            }
+        }
+    
+
+    private void startNewClient(){
+        if (contactPicked != null) {
+                if(nameTextField.getText().length()>0){
                 String name = nameTextField.getText();
                 String IP = contactPicked.getIP();
                 int port = contactPicked.getPort();
                 Client newClient = new Client(new Contact(name, IP, port));
-                nameTextField.setText("");
-            }
-        }
+                nameTextField.setText("");}
     }
-
-    
+    }
 
     private void refreshComboBox() {
         JFileChooser contactFolderChooser = new JFileChooser("Contacts/");
