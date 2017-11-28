@@ -67,9 +67,6 @@ class Server implements ObjectStreamListener {
         if (exception == null) {
             if (object instanceof Contact) {
                 Contact client = (Contact) object;
-                //if (client.active) {
-                //String name = connectedClient.getName();
-                //nameArray.add(name);
                 if (!isClientInContactArray(client)) {
                     contactArray.add(client);
                 } else {
@@ -78,16 +75,7 @@ class Server implements ObjectStreamListener {
                 }
                 uppdateConnectedClients();
 
-            } /*for (ObjectOutputStream OS : outputStreamArray) {
-                try {
-                    //   System.out.println(nameArray.toString());
-                    OS.writeObject(contactArray.clone());
-                    OS.flush();
-                } catch (IOException ex) {
-                    Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            } */ else if (object instanceof String) {
-                //System.out.println("we have an object");
+            } else if (object instanceof String) {
                 String message = (String) object;
                 sendMessageToAllStreams(message);
 
