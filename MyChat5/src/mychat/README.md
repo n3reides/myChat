@@ -1,2 +1,0 @@
-# myChat
-vape naysh chatroom
