@@ -9,7 +9,6 @@ class Contact implements Serializable {
     private final String CONTACT_NAME;
     private final String CONTACT_IP;
     private final int CONTACT_PORT;
-    boolean active = true;
 
     Contact(String name, String IP, int PORT) {
         CONTACT_NAME = name;

@@ -157,7 +157,7 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
         if (ae.getSource() instanceof JButton) {
             if (((JButton) (ae.getSource())).getText().equals("Close")) {
                 try {
-                    thisContact.active = false;
+                    //thisContact.active = false;
                     objectOutput.writeObject(thisContact);
                     objectOutput.flush();
                     mySocket.close();

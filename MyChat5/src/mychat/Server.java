@@ -24,59 +24,70 @@ class Server implements ObjectStreamListener {
 
     }
 
+    private boolean isClientInContactArray(Contact client) {
+        boolean inArray = false;
+        for (int i = 0; i < contactArray.size(); i++) {
+            if (client.equals(contactArray.get(i))) {
+                contactArray.remove(i);
+                outputStreamArray.remove(i);
+                inArray = !inArray;
+                break;
+            }
+
+        }
+        return inArray;
+    }
+
+    private void uppdateConnectedClients() {
+        for (ObjectOutputStream OS : outputStreamArray) {
+            try {
+                //   System.out.println(nameArray.toString());
+                OS.writeObject(contactArray.clone());
+                OS.flush();
+            } catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
     @Override
     public void objectReceived(int number, Object object, Exception exception) {
         System.out.println("We are in server OR");
         if (exception == null) {
             if (object instanceof Contact) {
                 Contact client = (Contact) object;
-                if (client.active) {
-                    //String name = connectedClient.getName();
-                    //nameArray.add(name);
+                //if (client.active) {
+                //String name = connectedClient.getName();
+                //nameArray.add(name);
+                if (!isClientInContactArray(client)) {
                     contactArray.add(client);
-                    for(ObjectOutputStream OS:outputStreamArray) {
-                        try {
-                            //   System.out.println(nameArray.toString());
-                            OS.writeObject(contactArray.clone());
-                            OS.flush();
-                        } catch (IOException ex) {
-                            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                    }
-                } else {
-                    for (int i = 0; i<contactArray.size(); i++) {
-                        if (client.equals(contactArray.get(i))) {
-                            contactArray.remove(i);
-                            outputStreamArray.remove(i);
-                            break;
-                        }
-                    }
-                   for(ObjectOutputStream OS:outputStreamArray) {
-                        try {
-                            //   System.out.println(nameArray.toString());
-                            OS.writeObject(contactArray.clone());
-                            OS.flush();
-                        } catch (IOException ex) {
-                            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-                        }
-                    }
                 }
-            } else if (object instanceof String) {
-                System.out.println("we have an object");
-                String message = (String) object;
-                for (ObjectOutputStream OS : outputStreamArray) {
-                    try {
-                        OS.writeObject(message);
-                        OS.flush();
-                    } catch (IOException ex) {
-                        Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+                uppdateConnectedClients();
 
+            }
+            /*for (ObjectOutputStream OS : outputStreamArray) {
+                try {
+                    //   System.out.println(nameArray.toString());
+                    OS.writeObject(contactArray.clone());
+                    OS.flush();
+                } catch (IOException ex) {
+                    Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } */
+        } else if (object instanceof String) {
+            System.out.println("we have an object");
+            String message = (String) object;
+            for (ObjectOutputStream OS : outputStreamArray) {
+                try {
+                    OS.writeObject(message);
+                    OS.flush();
+                } catch (IOException ex) {
+                    Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
                 }
 
             }
-        }
 
+        }
     }
 
 }
