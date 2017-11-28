@@ -95,10 +95,6 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
         textArea.setEditable(false);
         contactsArea = new JTextArea(rows, 10);
         contactsArea.setEditable(false);
-        scrollPaneContactsArea= new JScrollPane(contactsArea);
-        scrollPaneContactsArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        scrollPaneTextArea = new JScrollPane(textArea);
-        scrollPaneTextArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
     }
     
     void addContentToPanels(){
@@ -111,19 +107,23 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
         southPanel.add(sendButton, BorderLayout.EAST);
     }
 
-    void addPanelsToFrame() {
-        //add(mainPanel, BorderLayout.NORTH);
-        //add(southPanel, BorderLayout.SOUTH);
-        /*chatFrame.add(textField, BorderLayout.CENTER);
+   /* void addPanelsToFrame() {
+        add(mainPanel, BorderLayout.NORTH);
+        add(southPanel, BorderLayout.SOUTH);
+        chatFrame.add(textField, BorderLayout.CENTER);
         chatFrame.add(sendButton, BorderLayout.EAST);
         chatFrame.add(closeButton, BorderLayout.WEST);
-        chatFrame.add(northPanel, BorderLayout.NORTH); */
-    }
+        chatFrame.add(northPanel, BorderLayout.NORTH); 
+    } */
 
     void createPanels() {
         mainPanel = new JPanel(new BorderLayout());
         southPanel = new JPanel(new BorderLayout());
         eastPanel = new JPanel(new BorderLayout());
+        scrollPaneContactsArea= new JScrollPane(contactsArea);
+        scrollPaneContactsArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPaneTextArea = new JScrollPane(textArea);
+        scrollPaneTextArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         add(mainPanel, BorderLayout.WEST);
         add(eastPanel, BorderLayout.EAST);
         add(southPanel, BorderLayout.SOUTH);
