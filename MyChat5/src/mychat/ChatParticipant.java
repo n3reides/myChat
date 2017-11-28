@@ -34,9 +34,6 @@ import javax.swing.ScrollPaneConstants;
 class ChatParticipant extends JFrame implements ActionListener, ObjectStreamListener, WindowListener {
     
     private final String name;
-    //private final JFrame chatFrame;
-    private JPanel textAreaPanel;
-    private JPanel northPanel;
     private JScrollPane scrollPaneTextArea;
     private JTextField textField;
     private JTextArea textArea;
@@ -59,10 +56,6 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
     ChatParticipant(Socket socket, Contact myContact) throws IOException  {
         thisContact = myContact;
         name = myContact.getName();
-        /*chatFrame = new JFrame();
-        chatFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        chatFrame.setResizable(false); */
-        //setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setSize(400,300);
         setResizable(false);
@@ -70,8 +63,6 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
         createMisc();
         createPanels();
         addContentToPanels();
-        //addPanelsToFrame();
-        /*chatFrame.setVisible(true);*/
         pack();
         textField.addActionListener(this);
         sendButton.addActionListener(this);
@@ -102,23 +93,12 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
     }
     
     void addContentToPanels(){
-        //mainPanel.add(textArea, BorderLayout.WEST);
         mainPanel.add(scrollPaneTextArea, BorderLayout.CENTER);
-        //eastPanel.add(contactsArea,BorderLayout.CENTER);
         eastPanel.add(scrollPaneContactsArea, BorderLayout.EAST);
         southPanel.add(closeButton,BorderLayout.WEST);
         southPanel.add(textField, BorderLayout.CENTER);
         southPanel.add(sendButton, BorderLayout.EAST);
     }
-
-   /* void addPanelsToFrame() {
-        add(mainPanel, BorderLayout.NORTH);
-        add(southPanel, BorderLayout.SOUTH);
-        chatFrame.add(textField, BorderLayout.CENTER);
-        chatFrame.add(sendButton, BorderLayout.EAST);
-        chatFrame.add(closeButton, BorderLayout.WEST);
-        chatFrame.add(northPanel, BorderLayout.NORTH); 
-    } */
 
     void createPanels() {
         mainPanel = new JPanel(new BorderLayout());
@@ -131,10 +111,6 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
         add(mainPanel, BorderLayout.WEST);
         add(eastPanel, BorderLayout.EAST);
         add(southPanel, BorderLayout.SOUTH);
-        /*textAreaPanel = new JPanel();
-        northPanel = new JPanel();
-        northPanel.add(textAreaPanel, BorderLayout.CENTER);
-        northPanel.add(scrollPane, BorderLayout.EAST); */
     }
 
     public void send() throws IOException, ClassNotFoundException {
@@ -145,7 +121,6 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
             objectOutput.writeObject(message);
             //System.out.println("vi är i CLIENT send efter objectOutput.write");
             objectOutput.flush();
-            //display(message);
         } catch (IOException e) {
             //System.out.println("IOException in send");
         }
@@ -161,12 +136,10 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
         if (ae.getSource() instanceof JButton) {
             if (((JButton) (ae.getSource())).getText().equals("Close")) {
                 try {
-                    //thisContact.active = false;
                     objectOutput.writeObject(thisContact);
                     objectOutput.flush();
                     mySocket.close();
                     dispose();
-                    //chatFrame.dispose();
                 } catch (IOException ex) {
                     Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -201,7 +174,6 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
                     closeDialog.setVisible(true);
                     mySocket.close();
                     dispose();
-                    //chatFrame.dispose();
                 }
                 else if (object instanceof ArrayList) {
                     contactsArea.setText("");
