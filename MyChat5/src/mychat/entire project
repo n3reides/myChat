@@ -1,0 +1,791 @@
+package mychat;
+
+
+import java.awt.*;
+import java.awt.event.*;
+import java.io.*;
+import java.net.*;
+import java.nio.charset.*;
+import java.nio.file.*;
+import java.util.*;
+import java.util.logging.*;
+import javax.swing.*;
+
+public class MyChat {
+
+    //Olle Dahlstedt & Max Sonebäck
+    // Uppgift 4; 2017-11-24
+
+    public static void main(String[] args) throws IOException {
+        MainWindow mainFrame = new MainWindow();
+        
+    }
+
+
+}
+class CloseDialog extends JDialog implements Serializable, ActionListener {
+    
+    CloseDialog() {
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setSize(300, 100);
+        setResizable(false);
+        setTitle("Chat ended :(");
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.add(new JLabel("The other person has closed the connection."), BorderLayout.CENTER);
+        this.add(panel);
+        JButton okButton = new JButton("OK");
+        okButton.setSize(20, 30);
+        okButton.addActionListener(this);
+        this.add(okButton, BorderLayout.SOUTH);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        this.dispose();
+    }
+    
+}
+class NewContactWindow extends JFrame implements ActionListener {
+
+    private final JTextField textFieldName;
+    private final JTextField textFieldIP;
+    private final JTextField textFieldPort;
+    private final JLabel feedbackLabel;
+    private JTextField folderNameField;
+    private File contactFile;
+    private Path file;
+    private String fileName;
+    private JFrame newFolderFrame;
+    private JFileChooser contactFolderChooser;
+
+    NewContactWindow() {
+        setTitle("New Contact");
+        this.setSize(new Dimension(400, 300));
+        setResizable(false);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        createContactsFolder();
+
+        feedbackLabel = new JLabel("You are now editing " + fileName);
+
+        textFieldName = new JTextField();
+        textFieldIP = new JTextField();
+        textFieldPort = new JTextField();
+
+        addComponents();
+
+    }
+
+    private void createContactsFolder() {
+        fileName = "MyContacts.txt";
+        File dir = new File("Contacts/");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        contactFile = new File(dir, fileName);
+        file = contactFile.toPath();
+
+    }
+
+    private void addComponents() {
+
+        JPanel textAreaPanel = new JPanel();
+
+        GridLayout textLayout = new GridLayout(0, 1);
+        textAreaPanel.setLayout(textLayout);
+        textAreaPanel.add(feedbackLabel);
+        textAreaPanel.add(new JLabel("name:"));
+        textAreaPanel.add(textFieldName);
+        textAreaPanel.add(new JLabel("IP:"));
+        textAreaPanel.add(textFieldIP);
+        textAreaPanel.add(new JLabel("Port:"));
+        textAreaPanel.add(textFieldPort);
+
+        JPanel northPanel = new JPanel();
+
+        JButton chooseFolderButton = new JButton("Choose contact folder");
+        JButton newFolderButton = new JButton("Add new folder");
+        northPanel.add(chooseFolderButton, BorderLayout.WEST);
+        northPanel.add(newFolderButton, BorderLayout.EAST);
+        add(northPanel, BorderLayout.NORTH);
+        add(textAreaPanel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel();
+
+        JButton saveButton = new JButton("Save Contact");
+        JButton backButton = new JButton("Back");
+        buttonPanel.add(saveButton);
+        buttonPanel.add(backButton);
+        add(buttonPanel, BorderLayout.SOUTH);
+        GridLayout buttonLayout = new GridLayout(0, 2);
+        buttonPanel.setLayout(buttonLayout);
+
+        chooseFolderButton.addActionListener(this);
+        newFolderButton.addActionListener(this);
+        saveButton.addActionListener(this);
+        backButton.addActionListener(this);
+    }
+
+    private void saveContact() throws IOException {
+        ArrayList<String> lines = new ArrayList<>();
+        String name = textFieldName.getText();
+        name = name.replaceAll("\\s+", ".");
+        if (name.length() == 0) {
+            feedbackLabel.setText("Please enter a contact name");
+            return;
+        }
+        String IP = textFieldIP.getText();
+        IP = IP.replaceAll("\\s+", "");
+        if (IP.length() == 0 || hasLetters(IP)) {
+            feedbackLabel.setText("Please enter a valid IP Address");
+            return;
+        }
+        String port = textFieldPort.getText();
+        port = port.replaceAll("\\s+", "");
+        int intPort;
+        try {
+            intPort = Integer.parseInt(port);
+        } catch (NumberFormatException ex) {
+            feedbackLabel.setText("Please enter a valid port number");
+            return;
+        }
+
+        textFieldName.setText("");
+        textFieldIP.setText("");
+        textFieldPort.setText("");
+        String line = name + " " + IP + " " + Integer.toString(intPort);
+        lines.add(line);
+        if (contactFile.exists()) {
+            Files.write(file, lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+        } else {
+            Files.write(file, lines, Charset.forName("UTF-8"));
+        }
+         feedbackLabel.setText("You are now editing " + fileName);
+    }
+
+    private boolean hasLetters(String IP) {
+        boolean containLetters = false;
+        for (char ch : IP.toCharArray()) {
+            if (Character.isLetter(ch)) {
+                containLetters = true;
+                break;
+            }
+        }
+        return containLetters;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+
+        if (ae.getSource() instanceof JButton) {
+            switch (((JButton) (ae.getSource())).getText()) {
+                case "Save Contact":
+                    try {
+                        saveContact();
+                    } catch (IOException ex) {
+                        Logger.getLogger(NewContactWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    break;
+                case "Back":
+                    try {
+                        StartClientWindow backToStartWindow = new StartClientWindow();
+                        this.dispose();
+
+                    } catch (IOException ex) {
+                        Logger.getLogger(NewContactWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    break;
+                case "Add new folder":
+                    createNewFolderFrame();
+                    this.dispose();
+                    break;
+                case "Back to new contact window":
+                    NewContactWindow newContact = new NewContactWindow();
+                    newContact.setVisible(true);
+                    newFolderFrame.dispose();
+                    break;
+                case "Create new folder":
+                    try {
+                        fileName = folderNameField.getText() + ".txt";
+                        File dir = new File("Contacts/");
+                        dir.mkdirs();
+                        contactFile = new File(dir, fileName);
+                        //     file = contactFile.;
+                        if (!contactFile.exists()) {
+                            contactFile.createNewFile();
+                        }
+
+                    } catch (IOException ex) {
+                        Logger.getLogger(NewContactWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    break;
+                case "Choose contact folder":
+                    contactFolderChooser = new JFileChooser("Contacts/");
+                    int returnVal = contactFolderChooser.showOpenDialog(this);
+                    if (returnVal == JFileChooser.APPROVE_OPTION) {
+                        File chosenFile = contactFolderChooser.getSelectedFile();
+                        fileName = (String) chosenFile.getName();
+                        feedbackLabel.setText("You are editing folder " + fileName);
+                        File dir = new File("Contacts/");
+                        dir.mkdirs();
+                        contactFile = new File(dir, fileName);
+                        file = contactFile.toPath();
+                        repaint();
+                    }
+                    break;
+                default:
+                    break;
+            }
+
+        }
+    }
+
+
+    /* This method will create the frame for entering new folders to the Contacts folder. */
+    void createNewFolderFrame() {
+        newFolderFrame = new JFrame();
+        newFolderFrame.setLayout(new GridBagLayout());
+        newFolderFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        newFolderFrame.setTitle("Create new folder");
+        newFolderFrame.setSize(new Dimension(400, 300));
+        newFolderFrame.setResizable(false);
+        JPanel northPanel = new JPanel();
+        northPanel.setLayout(new GridLayout(0,1));    
+        JButton backButton = new JButton("Back to new contact window");
+        JButton newFolderButton = new JButton("Create new folder");
+        folderNameField = new JTextField();
+        folderNameField.setPreferredSize( new Dimension( 200, 30 ) );
+        northPanel.add(new JLabel("Enter folder name here:"));
+        northPanel.add(folderNameField);
+        newFolderFrame.add(northPanel, new GridBagConstraints());
+        northPanel.add(newFolderButton);
+        northPanel.add(backButton);
+        newFolderFrame.setVisible(true);
+        backButton.addActionListener(this);
+        newFolderButton.addActionListener(this);
+    }
+}
+
+class ObjectStreamManager implements ObjectStreamListener {
+    
+    private final ObjectInputStream theStream;
+    private final ObjectStreamListener theListener;
+    private final int theNumber;
+    private volatile boolean stopped = false;
+
+    public ObjectStreamManager(int number, ObjectInputStream stream, ObjectStreamListener listener) {
+        theNumber = number;
+        theStream = stream;
+        theListener = listener;
+        new InnerListener().start();
+    }
+
+    private void callback(final Object object, final Exception exception) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                if (!stopped) {
+                    theListener.objectReceived(theNumber, object, exception);
+                    if (exception != null) {
+                        closeManager();
+                    }
+                }
+            }
+        });
+    }
+
+    @Override
+    public void objectReceived(int number, Object object, Exception exception) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    private class InnerListener extends Thread {
+
+        @Override
+        public void run() {
+            while (!stopped) {
+                try {
+                    callback(theStream.readObject(), null);
+                } catch (Exception e) {
+                    callback(null, e);
+                }
+            }
+            try {
+                theStream.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    public void closeManager() {
+        stopped = true;
+    }
+    
+}
+
+
+interface ObjectStreamListener {
+
+    public void objectReceived(int number, Object object, Exception exception);
+    
+}
+class ChatParticipant extends JPanel implements ActionListener, ObjectStreamListener {
+    
+    private final String name;
+    private final JFrame chatFrame;
+    private JPanel textAreaPanel;
+    private JPanel northPanel;
+    private JScrollPane scrollPane;
+    private JTextField textField;
+    private JTextArea textArea;
+    private JButton sendButton;
+    private JButton closeButton;
+    private final Socket mySocket;
+    private OutputStream myOutput;
+    private ObjectOutputStream objectOutput;
+    private ObjectInputStream objectInput;
+    private ObjectStreamManager myManager;
+
+    ChatParticipant(Socket socket, String NAME) throws IOException {
+        name = NAME;
+        chatFrame = new JFrame();
+        chatFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        chatFrame.setResizable(false);
+        createMisc();
+        createPanels();
+        addPanelsToFrame();
+        chatFrame.setVisible(true);
+        chatFrame.pack();
+        textField.addActionListener(this);
+        sendButton.addActionListener(this);
+        closeButton.addActionListener(this);
+        mySocket = socket;
+        myOutput = mySocket.getOutputStream();
+        objectOutput = new ObjectOutputStream(myOutput);
+        InputStream myInput = mySocket.getInputStream();
+        objectInput = new ObjectInputStream(myInput);
+        myManager = new ObjectStreamManager((int) (Math.random() * 100), objectInput, this);
+    }
+
+    void createMisc() {
+        int field_width = 30;
+        int rows = 10;
+        int columns = 30;
+        textField = new JTextField(field_width);
+        sendButton = new JButton("Send");
+        closeButton = new JButton("Close");
+        textArea = new JTextArea(rows, columns);
+        textArea.setEditable(false);
+        scrollPane = new JScrollPane(textArea);
+        scrollPane.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+    }
+
+    void addPanelsToFrame() {
+        chatFrame.add(textField, BorderLayout.CENTER);
+        chatFrame.add(sendButton, BorderLayout.EAST);
+        chatFrame.add(closeButton, BorderLayout.WEST);
+        chatFrame.add(northPanel, BorderLayout.NORTH);
+    }
+
+    void createPanels() {
+        textAreaPanel = new JPanel();
+        northPanel = new JPanel();
+        northPanel.add(textAreaPanel, BorderLayout.CENTER);
+        northPanel.add(scrollPane, BorderLayout.EAST);
+    }
+
+    public void send() throws IOException, ClassNotFoundException {
+        try {
+            System.out.println("vi är i CLIENT send");
+            String message = name + " säger: " + textField.getText();
+            textField.setText("");
+            objectOutput.writeObject(message);
+            System.out.println("vi är i CLIENT send efter objectOutput.write");
+            objectOutput.flush();
+            display(message);
+        } catch (IOException e) {
+            System.out.println("IOException in send");
+        }
+    }
+
+    public void display(String message) throws IOException, ClassNotFoundException {
+        System.out.println("vi är i CLIENT display");
+        textArea.append(message + "\n");
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        if (ae.getSource() instanceof JButton) {
+            if (((JButton) (ae.getSource())).getText().equals("Close")) {
+                try {
+                    objectOutput.writeObject(2);
+                    objectOutput.flush();
+                    mySocket.close();
+                    chatFrame.dispose();
+                } catch (IOException ex) {
+                    Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else {
+                try {
+                    System.out.println("vi är i CLIENT actionPerformed");
+                    send();
+                } catch (IOException | ClassNotFoundException ex) {
+                    Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        } else if (ae.getSource() instanceof JTextField) {
+            try {
+                System.out.println("vi är i CLIENT actionPerformed");
+                send();
+            } catch (IOException | ClassNotFoundException ex) {
+                Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    @Override
+    public void objectReceived(int number, Object object, Exception exception) {
+        if (exception == null) {
+            try {
+                if (object != null && object instanceof String) {
+                    System.out.println("vi är i (CLIENT) objectRecieved");
+                    String message = (String) object;
+                    display(message);
+                } else if (object != null && object instanceof Integer) {
+                    CloseDialog closeDialog = new CloseDialog();
+                    closeDialog.setVisible(true);
+                    mySocket.close();
+                    chatFrame.dispose();
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ClassNotFoundException ex) {
+                Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+}
+class Server {
+    
+    ServerSocket serverSocket;
+    Socket mySocket;
+    ChatParticipant server;
+
+    Server(int port) throws IOException {
+        try {
+            String name = "SERVER";
+            serverSocket = new ServerSocket(port);
+            mySocket = serverSocket.accept();
+            server = new ChatParticipant(mySocket, name);
+        } catch (IOException e) {
+            System.out.println("IOException in Server, could not connect");
+        } finally {
+            serverSocket.close();
+        }
+    }
+    
+}
+
+class Client {
+    
+    Socket mySocket;
+    ChatParticipant client;
+
+    Client(String localhost, int port) {
+        try {
+            String name = "CLIENT";
+            mySocket = new Socket(localhost, port);
+            client = new ChatParticipant(mySocket, name);
+        } catch (IOException e) {
+            System.out.println("IOException in Client, could not connect");
+        }
+    }
+    
+}
+class Contact {
+    
+    private final String CONTACT_NAME;
+    private final String CONTACT_IP;
+    private final int CONTACT_PORT;
+
+    Contact(String name, String IP, int PORT) {
+        CONTACT_NAME = name;
+        CONTACT_IP = IP;
+        CONTACT_PORT = PORT;
+    }
+        String getName(){
+         return CONTACT_NAME;
+     }
+        String getIP(){
+         return CONTACT_IP;
+     }
+        int getPort() {
+            return CONTACT_PORT;
+        }
+     
+ } 
+public class ContactCellRenderer extends DefaultListCellRenderer {
+
+    public Component getListCellRendererComponent(
+            JList list,
+            Object value,
+            int index,
+            boolean isSelected,
+            boolean cellHasFocus) {
+        if (value instanceof Contact) {
+            value = ((Contact) value).getName();
+        }
+        super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        return this;
+    }
+}
+class StartServerWindow extends JFrame implements ActionListener {
+    
+    JPanel northPanel;
+    JPanel centerPanel;
+    JTextField PortTextField;
+
+    StartServerWindow() {
+        setLayout(new GridBagLayout());
+        setTitle("Start new server");
+        setSize(new Dimension(400, 300));
+        setResizable(false);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        centerPanel = new JPanel();
+        add(centerPanel, new GridBagConstraints());
+        centerPanel.setLayout(new GridLayout(0, 1));
+        PortTextField = new JTextField();
+        PortTextField.setPreferredSize(new Dimension(200, 30));
+        centerPanel.add(new JLabel("Choose Port"));
+        centerPanel.add(PortTextField);
+        JButton StartServerButton = new JButton("Start server");
+        JButton backButton = new JButton("Back");
+        centerPanel.add(StartServerButton);
+        centerPanel.add(backButton);
+        StartServerButton.addActionListener(this);
+        backButton.addActionListener(this);
+        setVisible(true);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        if (((JButton) (ae.getSource())).getText().equals("Start server")) {
+            try {
+                if (PortTextField.getText() != null) {
+                    Server newServer = new Server(Integer.parseInt(PortTextField.getText()));
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(StartServerWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if (((JButton) (ae.getSource())).getText().equals("Back")) {
+            MainWindow newMainWindow = new MainWindow();
+            dispose();
+        }
+    }
+    
+}
+final class StartClientWindow extends JFrame implements ActionListener {
+
+    private final JButton newContactButton;
+    private final JPanel northPanel;
+    private final JPanel centerPanel;
+    private final JPanel southPanel;
+    private JComboBox contactBox;
+    private Contact contactPicked;
+
+    StartClientWindow() throws IOException {
+        setTitle("Start Window");
+        setSize(new Dimension(400, 300));
+        setResizable(false);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        northPanel = new JPanel();
+        centerPanel = new JPanel();
+        centerPanel.setLayout(new GridLayout(0, 1));
+        southPanel = new JPanel();
+
+        createContactsFolder();
+        createContactBox();
+
+        newContactButton = new JButton("Add new contact");
+        JButton chooseFolderButton = new JButton("Choose contact folder");
+        northPanel.add(new JLabel("Pick your contact folder"), BorderLayout.NORTH);
+        northPanel.add(chooseFolderButton, BorderLayout.SOUTH);
+        southPanel.add(newContactButton);
+        centerPanel.add(new JLabel("Choose contact"));
+        centerPanel.add(contactBox);
+        JButton connectButton = new JButton("Connect");
+        connectButton.addActionListener(this);
+        //centerPanel.add(contactBox);
+        centerPanel.add(connectButton, BorderLayout.SOUTH);
+
+        chooseFolderButton.addActionListener(this);
+
+        newContactButton.addActionListener(this);
+        add(northPanel, BorderLayout.NORTH);
+        add(centerPanel, BorderLayout.CENTER);
+        add(southPanel, BorderLayout.SOUTH);
+        setVisible(true);
+        contactBox.addActionListener(this);
+    }
+
+    void createContactsFolder() {
+        File dir = new File("Contacts/");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        File contacts = new File(dir, "myContacts.txt");
+        if (!contacts.exists()) {
+            try {
+                contacts.createNewFile();
+            } catch (IOException ex) {
+                Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    void createContactBox() {
+        try {
+            contactBox = new JComboBox(createContactList("myContacts.txt"));
+            ListCellRenderer renderer = new ContactCellRenderer();
+            contactBox.setRenderer(renderer);
+            contactPicked = (Contact) contactBox.getSelectedItem();
+        } catch (IOException ex) {
+            Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+    }
+    //  String[] createContactFolderList() {
+
+    // }
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        if (ae.getSource() instanceof JComboBox) {
+            JComboBox cb = (JComboBox) ae.getSource();
+            contactPicked = (Contact) cb.getSelectedItem();
+
+            //this.pack();
+        } else if (ae.getSource() instanceof JButton) {
+            if (((JButton) (ae.getSource())).getText().equals("Add new contact")) {
+                NewContactWindow newContact = new NewContactWindow();
+                newContact.setVisible(true);
+                this.dispose();
+            } else if (((JButton) (ae.getSource())).getText().equals("Connect")) {
+                if (contactPicked != null) {
+                    String IP = contactPicked.getIP();
+                    int port = contactPicked.getPort();
+                    Client newClient = new Client(IP, port);
+                }
+
+            } else if (((JButton) (ae.getSource())).getText().equals("Choose contact folder")) {
+                File dir = new File("Contacts/");
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                refreshComboBox();
+
+            }
+        }
+    }
+
+    private void refreshComboBox() {
+        JFileChooser contactFolderChooser = new JFileChooser("Contacts/");
+        int returnVal = contactFolderChooser.showOpenDialog(null);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = contactFolderChooser.getSelectedFile();
+            String fileName = selectedFile.getName();
+            System.out.println(fileName);
+            try {
+                Contact[] myContacts = createContactList(fileName);
+                contactBox.removeAllItems();
+                for (Contact aContact : myContacts) {
+                    contactBox.addItem(aContact);
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            revalidate();
+            repaint();
+
+        }
+
+    }
+
+    Contact[] createContactList(String fileName) throws IOException {
+        File file = new File("Contacts/", fileName);
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        StringBuffer stringBuffer = new StringBuffer();
+        String line;
+        ArrayList<String> lines = new ArrayList<>();
+        while ((line = bufferedReader.readLine()) != null) {
+            stringBuffer.append(line);
+            lines.add(stringBuffer.toString());
+            stringBuffer.setLength(0);
+        }
+        ArrayList<String> NAMES = new ArrayList<>();
+        ArrayList<String> IP_ADDRESSES = new ArrayList<>();
+        ArrayList<Integer> PORTS = new ArrayList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            String string = lines.get(i);
+            String[] splitString = string.split("\\s+");
+            NAMES.add(splitString[0]);
+            IP_ADDRESSES.add(splitString[1]);
+            PORTS.add(Integer.parseInt(splitString[2]));
+        }
+        Contact[] contactList = new Contact[lines.size()];
+        int i = 0;
+        while (i < contactList.length) {
+            contactList[i] = new Contact(NAMES.get(i), IP_ADDRESSES.get(i), PORTS.get(i));
+            i++;
+        }
+        return contactList;
+    }
+
+}
+class MainWindow extends JFrame implements ActionListener {
+    
+    private final JPanel centerPanel;
+    private final JButton SERVER_START_BUTTON;
+    private final JButton CLIENT_START_BUTTON;
+    private final JButton EXIT_BUTTON;
+
+    MainWindow() {
+        setLayout(new GridBagLayout());
+        setSize(400, 300);
+        setTitle("Chat program");
+        setResizable(false);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        centerPanel = new JPanel();
+        add(centerPanel,new GridBagConstraints());
+        SERVER_START_BUTTON = new JButton("Start server");
+        CLIENT_START_BUTTON = new JButton("Start client");
+        EXIT_BUTTON = new JButton("Exit program");
+        centerPanel.add(SERVER_START_BUTTON);
+        centerPanel.add(CLIENT_START_BUTTON);
+        centerPanel.add(EXIT_BUTTON);
+        SERVER_START_BUTTON.addActionListener(this);
+        CLIENT_START_BUTTON.addActionListener(this);
+        EXIT_BUTTON.addActionListener(this);
+        setVisible(true);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        if (((JButton) (ae.getSource())).getText().equals("Start server")) {
+            StartServerWindow serverWindow = new StartServerWindow();
+            dispose();
+        } else if (((JButton) (ae.getSource())).getText().equals("Start client")) {
+            try {
+                StartClientWindow clientWindow = new StartClientWindow();
+                dispose();
+            } catch (IOException ex) {
+                Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        else if (((JButton) (ae.getSource())).getText().equals("Exit program")) {
+            dispose();
+        }
+    }
+    
+}
