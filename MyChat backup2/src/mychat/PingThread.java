@@ -13,13 +13,9 @@ import java.net.Socket;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-/**
- *
- * @author olda4871
- */
 public class PingThread extends Thread {
-    ServerSocket myServerSocket;
-    Server myServer;
+    private ServerSocket myServerSocket;
+    private final Server myServer;
     
     PingThread(int port, Server server){
         try {
@@ -41,14 +37,12 @@ public class PingThread extends Thread {
             try {
                 Socket mySocket = myServerSocket.accept();
                 myServer.connections++;
-             //   System.out.println("new socket opened: " + mySocket);
                 ObjectOutputStream newOS = new ObjectOutputStream(mySocket.getOutputStream());
                 newOS.writeObject(myServer.welcomeMessage);
-                myServer.outputStreamArray.add(newOS);
+                myServer.OUTPUT_STREAM_ARRAY_LIST.add(newOS);
                 ObjectInputStream OBJECT_INPUT_STREAM = new ObjectInputStream(mySocket.getInputStream());
                 ObjectStreamManager OSM = new ObjectStreamManager((int) (Math.random() * 1000), OBJECT_INPUT_STREAM, myServer);
-              //  System.out.println(OSM);
-                myServer.streamManagerArray.add(OSM);
+                myServer.STREAM_MANAGER_ARRAY_LIST.add(OSM);
             } catch (IOException ex) {
                 Logger.getLogger(PingThread.class.getName()).log(Level.SEVERE, null, ex);
             }

@@ -1,7 +1,5 @@
-
 package mychat;
 
-import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -17,15 +15,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-/**
- *
- * @author olda4871
- */
 class StartServerWindow extends JFrame implements ActionListener {
-    
-    JPanel northPanel;
-    JPanel centerPanel;
-    JTextField PortTextField;
+
+    private final JTextField PORT_FIELD;
 
     StartServerWindow() {
         setLayout(new GridBagLayout());
@@ -33,14 +25,14 @@ class StartServerWindow extends JFrame implements ActionListener {
         setSize(new Dimension(400, 300));
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        centerPanel = new JPanel();
+        JPanel centerPanel = new JPanel();
         add(centerPanel, new GridBagConstraints());
         centerPanel.setLayout(new GridLayout(0, 1));
-        PortTextField = new JTextField();
-        PortTextField.setPreferredSize(new Dimension(200, 30));
+        PORT_FIELD = new JTextField();
+        PORT_FIELD.setPreferredSize(new Dimension(200, 30));
         centerPanel.add(new JLabel("Choose Port"));
-        centerPanel.add(PortTextField);
-        PortTextField.setText("8191");
+        centerPanel.add(PORT_FIELD);
+        PORT_FIELD.setText("8191");
         JButton StartServerButton = new JButton("Start server");
         JButton backButton = new JButton("Back");
         centerPanel.add(StartServerButton);
@@ -54,8 +46,8 @@ class StartServerWindow extends JFrame implements ActionListener {
     public void actionPerformed(ActionEvent ae) {
         if (((JButton) (ae.getSource())).getText().equals("Start server")) {
             try {
-                if (PortTextField.getText() != null) {
-                    Server newServer = new Server(Integer.parseInt(PortTextField.getText()));
+                if (PORT_FIELD.getText() != null) {
+                    Server newServer = new Server(Integer.parseInt(PORT_FIELD.getText()));
                 }
             } catch (IOException ex) {
                 Logger.getLogger(StartServerWindow.class.getName()).log(Level.SEVERE, null, ex);
@@ -65,5 +57,5 @@ class StartServerWindow extends JFrame implements ActionListener {
             dispose();
         }
     }
-    
+
 }

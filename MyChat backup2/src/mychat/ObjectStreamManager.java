@@ -21,9 +21,8 @@ class ObjectStreamManager {
     }
 
     private void callback(final Object object, final Exception exception) {
-        //System.out.println("Innan invokeLater");
         SwingUtilities.invokeLater(new Runnable() {
-            public void run() { System.out.println("efter invokeLater");
+            public void run() { 
                 if (!stopped) {
                     theListener.objectReceived(theNumber, object, exception);
                     if (exception != null) {

@@ -3,7 +3,6 @@ package mychat;
 
 import java.io.Serializable;
 
-
 class Contact implements Serializable {
     
     private final String CONTACT_NAME;
@@ -17,13 +16,13 @@ class Contact implements Serializable {
     }
         String getName(){
          return CONTACT_NAME;
-     }
+    }
         String getIP(){
          return CONTACT_IP;
-     }
+    }
         int getPort() {
             return CONTACT_PORT;
-        }
+    }
      
  } 
     

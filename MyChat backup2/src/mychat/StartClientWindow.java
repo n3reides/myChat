@@ -9,31 +9,27 @@ import javax.swing.*;
 
 final class StartClientWindow extends JFrame implements ActionListener {
 
-    private final JButton newContactButton;
-    private final JPanel northPanel;
-    private final JPanel centerPanel;
-    private final JPanel southPanel;
     private JComboBox contactBox;
     private Contact contactPicked;
-    private JTextField nameTextField;
+    private final JTextField NAME_FIELD;
 
     StartClientWindow() throws IOException {
         setTitle("Start Window");
         setSize(new Dimension(400, 300));
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        northPanel = new JPanel();
-        centerPanel = new JPanel();
+        JPanel northPanel = new JPanel();
+        JPanel centerPanel = new JPanel();
         centerPanel.setLayout(new GridLayout(0, 1));
-        southPanel = new JPanel();
+        JPanel southPanel = new JPanel();
 
         createContactsFolder();
         createContactBox();
 
-        newContactButton = new JButton("Add new chatroom");
+        JButton newContactButton = new JButton("Add new chatroom");
         JButton backButton = new JButton("Back");
-        nameTextField = new JTextField();
-        nameTextField.addActionListener(this);
+        NAME_FIELD = new JTextField();
+        NAME_FIELD.addActionListener(this);
         JButton chooseFolderButton = new JButton("Choose chatroom folder");
         northPanel.add(new JLabel("Pick your chatroom folder"), BorderLayout.NORTH);
         northPanel.add(chooseFolderButton, BorderLayout.SOUTH);
@@ -42,10 +38,9 @@ final class StartClientWindow extends JFrame implements ActionListener {
         centerPanel.add(new JLabel("Choose chatroom"));
         centerPanel.add(contactBox);
         centerPanel.add(new JLabel("Write your username"));
-        centerPanel.add(nameTextField);
+        centerPanel.add(NAME_FIELD);
         JButton connectButton = new JButton("Connect");
         connectButton.addActionListener(this);
-        //centerPanel.add(contactBox);
         centerPanel.add(connectButton, BorderLayout.SOUTH);
 
         chooseFolderButton.addActionListener(this);
@@ -84,16 +79,13 @@ final class StartClientWindow extends JFrame implements ActionListener {
         }
 
     }
-    //  String[] createContactFolderList() {
 
-    // }
     @Override
     public void actionPerformed(ActionEvent ae) {
         if (ae.getSource() instanceof JComboBox) {
             JComboBox cb = (JComboBox) ae.getSource();
             contactPicked = (Contact) cb.getSelectedItem();
 
-            //this.pack();
         } else if (ae.getSource() instanceof JButton) {
             if (((JButton) (ae.getSource())).getText().equals("Add new chatroom")) {
                 NewContactWindow newContact = new NewContactWindow();
@@ -121,14 +113,14 @@ final class StartClientWindow extends JFrame implements ActionListener {
 
     private void startNewClient() {
         if (contactPicked != null) {
-            if (nameTextField.getText().length() > 0) {
-                String name = nameTextField.getText();
+            if (NAME_FIELD.getText().length() > 0) {
+                String name = NAME_FIELD.getText();
                 String IP = contactPicked.getIP();
                 int port = contactPicked.getPort();
                 Client newClient = new Client(new Contact(name, IP, port));
-                nameTextField.setText("");
+                NAME_FIELD.setText("");
             } else {
-                nameTextField.setText("IAmToStupidToEnterAUsername");
+                NAME_FIELD.setText("IAmToStupidToEnterAUsername");
             }
         }
 
@@ -150,10 +142,6 @@ final class StartClientWindow extends JFrame implements ActionListener {
             } catch (IOException ex) {
                 Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
             }
-
-            revalidate();
-            repaint();
-
         }
 
     }
