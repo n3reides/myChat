@@ -1,19 +1,15 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package mychat;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStream;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
@@ -24,126 +20,97 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 
-/**
- *
- * @author olda4871
- */
-class ChatParticipant extends JFrame implements ActionListener, ObjectStreamListener {
-    
-    private final String name;
-    //private final JFrame chatFrame;
-    private JPanel textAreaPanel;
-    private JPanel northPanel;
-    private JScrollPane scrollPaneTextArea;
-    private JTextField textField;
-    private JTextArea textArea;
-    private JButton sendButton;
-    private JButton closeButton;
-    private final Socket mySocket;
-    private OutputStream myOutput;
-    private ObjectOutputStream objectOutput;
-    private ObjectInputStream objectInput;
-    private ObjectStreamManager myManager;
-    
-    private JPanel mainPanel;
-    private JPanel southPanel;
-    private JPanel eastPanel;
-    private JTextArea contactsArea;
-    private JScrollPane scrollPaneContactsArea;
 
-    ChatParticipant(Socket socket, String NAME) throws IOException {
-        name = NAME;
-        /*chatFrame = new JFrame();
-        chatFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        chatFrame.setResizable(false); */
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(400,300);
+class ChatParticipant extends JFrame implements ActionListener, ObjectStreamListener, WindowListener {
+
+    private final Socket MY_SOCKET;
+    private final Contact THIS_CONTACT;
+    private final ObjectStreamManager MY_MANAGER;
+    private final ObjectOutputStream OBJECT_OUTPUT;
+    
+    private JScrollPane scrollPaneTextArea, scrollPaneContactsArea;
+    private JTextField textField;
+    private JTextArea textArea, contactsArea;;
+    private JButton sendButton, closeButton;
+    private JPanel mainPanel, southPanel, eastPanel;
+
+    ChatParticipant(Socket socket, Contact myContact) throws IOException {
+        setTitle(myContact.getName());
+        setLocationRelativeTo(null);
         setResizable(false);
         setVisible(true);
         createMisc();
         createPanels();
         addContentToPanels();
-        //addPanelsToFrame();
-        /*chatFrame.setVisible(true);*/
         pack();
+        
         textField.addActionListener(this);
         sendButton.addActionListener(this);
         closeButton.addActionListener(this);
-        mySocket = socket;
-        myOutput = mySocket.getOutputStream();
-        objectOutput = new ObjectOutputStream(myOutput);
-        InputStream myInput = mySocket.getInputStream();
-        objectInput = new ObjectInputStream(myInput);
-        myManager = new ObjectStreamManager((int) (Math.random() * 100), objectInput, this);
+        addWindowListener(this);
+        
+        MY_SOCKET = socket;
+        OBJECT_OUTPUT = new ObjectOutputStream(MY_SOCKET.getOutputStream());
+        MY_MANAGER = new ObjectStreamManager((int) (Math.random() * 100), new ObjectInputStream(MY_SOCKET.getInputStream()), this);
+        THIS_CONTACT = myContact;
+        OBJECT_OUTPUT.writeObject(THIS_CONTACT);
     }
 
-    void createMisc() {
-        int field_width = 30;
-        int rows = 10;
-        int columns = 30;
-        textField = new JTextField(field_width);
+    final void createMisc() {
+        int fieldWidth = 30;
+        int rows = 20;
+        int textAreaColumns = 40;
+        int contactsAreaColumns = 15;
+        textField = new JTextField(fieldWidth);
         sendButton = new JButton("Send");
         closeButton = new JButton("Close");
-        textArea = new JTextArea(rows, columns);
-        textArea.setLineWrap (true);
+        textArea = new JTextArea(rows, textAreaColumns);
+        textArea.setLineWrap(true);
         textArea.setEditable(false);
-        contactsArea = new JTextArea(rows, 10);
+        contactsArea = new JTextArea(rows, contactsAreaColumns);
         contactsArea.setEditable(false);
-        scrollPaneContactsArea= new JScrollPane(contactsArea);
-        scrollPaneContactsArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-        scrollPaneTextArea = new JScrollPane(textArea);
-        scrollPaneTextArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
     }
-    
-    void addContentToPanels(){
-        //mainPanel.add(textArea, BorderLayout.WEST);
+
+    final void addContentToPanels() {
         mainPanel.add(scrollPaneTextArea, BorderLayout.CENTER);
-        //eastPanel.add(contactsArea,BorderLayout.CENTER);
         eastPanel.add(scrollPaneContactsArea, BorderLayout.EAST);
-        southPanel.add(closeButton,BorderLayout.WEST);
+        southPanel.add(closeButton, BorderLayout.WEST);
         southPanel.add(textField, BorderLayout.CENTER);
         southPanel.add(sendButton, BorderLayout.EAST);
     }
 
-    void addPanelsToFrame() {
-        //add(mainPanel, BorderLayout.NORTH);
-        //add(southPanel, BorderLayout.SOUTH);
-        /*chatFrame.add(textField, BorderLayout.CENTER);
-        chatFrame.add(sendButton, BorderLayout.EAST);
-        chatFrame.add(closeButton, BorderLayout.WEST);
-        chatFrame.add(northPanel, BorderLayout.NORTH); */
-    }
-
-    void createPanels() {
+    final void createPanels() {
         mainPanel = new JPanel(new BorderLayout());
         southPanel = new JPanel(new BorderLayout());
         eastPanel = new JPanel(new BorderLayout());
+        scrollPaneContactsArea = new JScrollPane(contactsArea);
+        scrollPaneContactsArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPaneTextArea = new JScrollPane(textArea);
+        scrollPaneTextArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
         add(mainPanel, BorderLayout.WEST);
         add(eastPanel, BorderLayout.EAST);
         add(southPanel, BorderLayout.SOUTH);
-        /*textAreaPanel = new JPanel();
-        northPanel = new JPanel();
-        northPanel.add(textAreaPanel, BorderLayout.CENTER);
-        northPanel.add(scrollPane, BorderLayout.EAST); */
     }
 
-    public void send() throws IOException, ClassNotFoundException {
+    private void send() throws IOException, ClassNotFoundException {
         try {
-            System.out.println("vi är i CLIENT send");
-            String message = name + " : " + textField.getText();
+            String message = THIS_CONTACT.getName() + " : " + textField.getText();
             textField.setText("");
-            objectOutput.writeObject(message);
-            System.out.println("vi är i CLIENT send efter objectOutput.write");
-            objectOutput.flush();
-            //display(message);
+            OBJECT_OUTPUT.writeObject(message);
+            OBJECT_OUTPUT.flush();
         } catch (IOException e) {
-            System.out.println("IOException in send");
         }
     }
 
-    public void display(String message) throws IOException, ClassNotFoundException {
-        System.out.println("vi är i CLIENT display");
+    private void display(String message) throws IOException, ClassNotFoundException {
         textArea.append(message + "\n");
+    }
+    
+    void closeChatWindow() throws IOException {
+        MY_MANAGER.closeManager();
+        OBJECT_OUTPUT.writeObject(THIS_CONTACT);
+        OBJECT_OUTPUT.close();
+        dispose();
     }
 
     @Override
@@ -151,17 +118,12 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
         if (ae.getSource() instanceof JButton) {
             if (((JButton) (ae.getSource())).getText().equals("Close")) {
                 try {
-                    objectOutput.writeObject(2);
-                    objectOutput.flush();
-                    mySocket.close();
-                    dispose();
-                    //chatFrame.dispose();
+                    closeChatWindow();
                 } catch (IOException ex) {
-                    Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
+                    dispose();
                 }
             } else {
                 try {
-                    System.out.println("vi är i CLIENT actionPerformed");
                     send();
                 } catch (IOException | ClassNotFoundException ex) {
                     Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
@@ -169,7 +131,6 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
             }
         } else if (ae.getSource() instanceof JTextField) {
             try {
-                System.out.println("vi är i CLIENT actionPerformed");
                 send();
             } catch (IOException | ClassNotFoundException ex) {
                 Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
@@ -181,16 +142,18 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
     public void objectReceived(int number, Object object, Exception exception) {
         if (exception == null) {
             try {
-                if (object != null && object instanceof String) {
-                    System.out.println("vi är i (CLIENT) objectRecieved");
+                if (object instanceof String) {
                     String message = (String) object;
                     display(message);
                 } else if (object != null && object instanceof Integer) {
-                    CloseDialog closeDialog = new CloseDialog();
-                    closeDialog.setVisible(true);
-                    mySocket.close();
+                    MY_SOCKET.close();
                     dispose();
-                    //chatFrame.dispose();
+                } else if (object instanceof ArrayList) {
+                    contactsArea.setText("");
+                    ArrayList<Contact> contactArray = new ArrayList((ArrayList<Contact>) object);
+                    for (Contact contact : contactArray) {
+                        contactsArea.append(contact.getName() + "\n");
+                    }
                 }
             } catch (IOException ex) {
                 Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
@@ -199,5 +162,32 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
             }
         }
     }
-    
+
+    @Override
+    public void windowOpened(WindowEvent we) {}
+
+    @Override
+    public void windowClosing(WindowEvent we) {
+        try {
+            closeChatWindow();
+        } catch (IOException ex) {
+            dispose();
+        }
+    }
+
+    @Override
+    public void windowIconified(WindowEvent we) {}
+
+    @Override
+    public void windowDeiconified(WindowEvent we) {}
+
+    @Override
+    public void windowActivated(WindowEvent we) {}
+
+    @Override
+    public void windowDeactivated(WindowEvent we) {}
+
+    @Override
+    public void windowClosed(WindowEvent we) {}
+
 }

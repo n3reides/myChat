@@ -6,7 +6,7 @@ import java.io.ObjectInputStream;
 import javax.swing.SwingUtilities;
 
 
-class ObjectStreamManager implements ObjectStreamListener {
+class ObjectStreamManager {
     
     private final ObjectInputStream theStream;
     private final ObjectStreamListener theListener;
@@ -22,7 +22,7 @@ class ObjectStreamManager implements ObjectStreamListener {
 
     private void callback(final Object object, final Exception exception) {
         SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
+            public void run() { 
                 if (!stopped) {
                     theListener.objectReceived(theNumber, object, exception);
                     if (exception != null) {
@@ -31,11 +31,6 @@ class ObjectStreamManager implements ObjectStreamListener {
                 }
             }
         });
-    }
-
-    @Override
-    public void objectReceived(int number, Object object, Exception exception) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     private class InnerListener extends Thread {

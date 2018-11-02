@@ -23,10 +23,11 @@ import javax.swing.JTextField;
 
 class NewContactWindow extends JFrame implements ActionListener {
 
-    private final JTextField textFieldName;
-    private final JTextField textFieldIP;
-    private final JTextField textFieldPort;
-    private final JLabel feedbackLabel;
+    private final JTextField NAME_FIELD;
+    private final JTextField IP_FIELD;
+    private final JTextField PORT_FIELD;
+    private final JLabel CHATROOM_FOLDER_LABEL;
+    private final JLabel NEW_CHATROOM_FOLDER_LABEL = new JLabel();
     private JTextField folderNameField;
     private File contactFile;
     private Path file;
@@ -35,18 +36,19 @@ class NewContactWindow extends JFrame implements ActionListener {
     private JFileChooser contactFolderChooser;
 
     NewContactWindow() {
-        setTitle("New Contact");
+        setTitle("New Chatroom");
         this.setSize(new Dimension(400, 300));
         setResizable(false);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         createContactsFolder();
 
-        feedbackLabel = new JLabel("You are now editing " + fileName);
+        CHATROOM_FOLDER_LABEL = new JLabel("You are now editing " + fileName);
+        
 
-        textFieldName = new JTextField();
-        textFieldIP = new JTextField();
-        textFieldPort = new JTextField();
+        NAME_FIELD = new JTextField();
+        IP_FIELD = new JTextField();
+        PORT_FIELD = new JTextField();
 
         addComponents();
 
@@ -69,17 +71,17 @@ class NewContactWindow extends JFrame implements ActionListener {
 
         GridLayout textLayout = new GridLayout(0, 1);
         textAreaPanel.setLayout(textLayout);
-        textAreaPanel.add(feedbackLabel);
+        textAreaPanel.add(CHATROOM_FOLDER_LABEL);
         textAreaPanel.add(new JLabel("name:"));
-        textAreaPanel.add(textFieldName);
+        textAreaPanel.add(NAME_FIELD);
         textAreaPanel.add(new JLabel("IP:"));
-        textAreaPanel.add(textFieldIP);
+        textAreaPanel.add(IP_FIELD);
         textAreaPanel.add(new JLabel("Port:"));
-        textAreaPanel.add(textFieldPort);
+        textAreaPanel.add(PORT_FIELD);
 
         JPanel northPanel = new JPanel();
 
-        JButton chooseFolderButton = new JButton("Choose contact folder");
+        JButton chooseFolderButton = new JButton("Choose chatroom folder");
         JButton newFolderButton = new JButton("Add new folder");
         northPanel.add(chooseFolderButton, BorderLayout.WEST);
         northPanel.add(newFolderButton, BorderLayout.EAST);
@@ -88,7 +90,7 @@ class NewContactWindow extends JFrame implements ActionListener {
 
         JPanel buttonPanel = new JPanel();
 
-        JButton saveButton = new JButton("Save Contact");
+        JButton saveButton = new JButton("Save chatroom");
         JButton backButton = new JButton("Back");
         buttonPanel.add(saveButton);
         buttonPanel.add(backButton);
@@ -104,31 +106,31 @@ class NewContactWindow extends JFrame implements ActionListener {
 
     private void saveContact() throws IOException {
         ArrayList<String> lines = new ArrayList<>();
-        String name = textFieldName.getText();
+        String name = NAME_FIELD.getText();
         name = name.replaceAll("\\s+", ".");
         if (name.length() == 0) {
-            feedbackLabel.setText("Please enter a contact name");
+            CHATROOM_FOLDER_LABEL.setText("Please enter a chatroom name");
             return;
         }
-        String IP = textFieldIP.getText();
+        String IP = IP_FIELD.getText();
         IP = IP.replaceAll("\\s+", "");
         if (IP.length() == 0 || hasLetters(IP)) {
-            feedbackLabel.setText("Please enter a valid IP Address");
+            CHATROOM_FOLDER_LABEL.setText("Please enter a valid IP Address");
             return;
         }
-        String port = textFieldPort.getText();
+        String port = PORT_FIELD.getText();
         port = port.replaceAll("\\s+", "");
         int intPort;
         try {
             intPort = Integer.parseInt(port);
         } catch (NumberFormatException ex) {
-            feedbackLabel.setText("Please enter a valid port number");
+            CHATROOM_FOLDER_LABEL.setText("Please enter a valid port number");
             return;
         }
 
-        textFieldName.setText("");
-        textFieldIP.setText("");
-        textFieldPort.setText("");
+        NAME_FIELD.setText("");
+        IP_FIELD.setText("");
+        PORT_FIELD.setText("");
         String line = name + " " + IP + " " + Integer.toString(intPort);
         lines.add(line);
         if (contactFile.exists()) {
@@ -136,7 +138,7 @@ class NewContactWindow extends JFrame implements ActionListener {
         } else {
             Files.write(file, lines, Charset.forName("UTF-8"));
         }
-         feedbackLabel.setText("You are now editing " + fileName);
+         CHATROOM_FOLDER_LABEL.setText("You are now editing " + fileName);
     }
 
     private boolean hasLetters(String IP) {
@@ -155,7 +157,7 @@ class NewContactWindow extends JFrame implements ActionListener {
 
         if (ae.getSource() instanceof JButton) {
             switch (((JButton) (ae.getSource())).getText()) {
-                case "Save Contact":
+                case "Save chatroom":
                     try {
                         saveContact();
                     } catch (IOException ex) {
@@ -175,7 +177,7 @@ class NewContactWindow extends JFrame implements ActionListener {
                     createNewFolderFrame();
                     this.dispose();
                     break;
-                case "Back to new contact window":
+                case "Back to new chatroom window":
                     NewContactWindow newContact = new NewContactWindow();
                     newContact.setVisible(true);
                     newFolderFrame.dispose();
@@ -186,22 +188,23 @@ class NewContactWindow extends JFrame implements ActionListener {
                         File dir = new File("Contacts/");
                         dir.mkdirs();
                         contactFile = new File(dir, fileName);
-                        //     file = contactFile.;
                         if (!contactFile.exists()) {
                             contactFile.createNewFile();
                         }
+                        folderNameField.setText("");
+                        NEW_CHATROOM_FOLDER_LABEL.setText("Folder created!");
 
                     } catch (IOException ex) {
                         Logger.getLogger(NewContactWindow.class.getName()).log(Level.SEVERE, null, ex);
                     }
                     break;
-                case "Choose contact folder":
+                case "Choose chatroom folder":
                     contactFolderChooser = new JFileChooser("Contacts/");
                     int returnVal = contactFolderChooser.showOpenDialog(this);
                     if (returnVal == JFileChooser.APPROVE_OPTION) {
                         File chosenFile = contactFolderChooser.getSelectedFile();
                         fileName = (String) chosenFile.getName();
-                        feedbackLabel.setText("You are editing folder " + fileName);
+                        CHATROOM_FOLDER_LABEL.setText("You are editing folder " + fileName);
                         File dir = new File("Contacts/");
                         dir.mkdirs();
                         contactFile = new File(dir, fileName);
@@ -227,10 +230,11 @@ class NewContactWindow extends JFrame implements ActionListener {
         newFolderFrame.setResizable(false);
         JPanel northPanel = new JPanel();
         northPanel.setLayout(new GridLayout(0,1));    
-        JButton backButton = new JButton("Back to new contact window");
+        JButton backButton = new JButton("Back to new chatroom window");
         JButton newFolderButton = new JButton("Create new folder");
         folderNameField = new JTextField();
         folderNameField.setPreferredSize( new Dimension( 200, 30 ) );
+        northPanel.add(NEW_CHATROOM_FOLDER_LABEL);
         northPanel.add(new JLabel("Enter folder name here:"));
         northPanel.add(folderNameField);
         newFolderFrame.add(northPanel, new GridBagConstraints());

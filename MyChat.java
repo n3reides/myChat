@@ -1,29 +1,44 @@
+
 package mychat;
 
-
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.GridLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.*;
-import java.net.InetAddress;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.swing.JButton;
-import javax.swing.JFrame;
-import javax.swing.JPanel;
+import java.net.*;
 
 public class MyChat {
 
-    //Olle Dahlstedt & Max Sonebäck
-    // Uppgift 4; 2017-11-24
+    
+    // Max Sonebäck & Olle Dahlstedt
+    // Olle Dahlstedt & Max Sonebäck
+    // STS2A
+    // Uppgift 5: 2017-11-29
+    // Vape Nation Chatroom
+    // Immortal Technique
 
+    // Comments by Olle <2018-11-01>
+    
+    // run program, start here
     public static void main(String[] args) throws IOException {
-        System.out.println(InetAddress.getLocalHost().getHostAddress‌​());
+    //    System.out.println(InetAddress.getByName("localhost"));
+    
+    // this probably doesnt do anything but I'm too afraid to comment it out
+        String systemipaddress = "";
+        try
+        {
+            URL url_name = new URL("http://bot.whatismyipaddress.com");
+ 
+            BufferedReader sc =
+            new BufferedReader(new InputStreamReader(url_name.openStream()));
+ 
+            systemipaddress = sc.readLine().trim();
+        }
+        catch (Exception e)
+        {
+            systemipaddress = "Cannot Execute Properly";
+        }
+
+
+    // main function just starts the main thread which runs the main window 
         MainWindow mainFrame = new MainWindow();
         
     }
-
-
 }

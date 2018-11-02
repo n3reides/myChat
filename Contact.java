@@ -1,8 +1,10 @@
 
 package mychat;
 
+import java.io.Serializable;
 
-class Contact {
+
+class Contact implements Serializable {
     
     private final String CONTACT_NAME;
     private final String CONTACT_IP;
@@ -24,4 +26,3 @@ class Contact {
         }
      
  } 
-    
