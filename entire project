@@ -365,7 +365,8 @@ final class StartClientWindow extends JFrame implements ActionListener {
 // Servern ska också skicka vidare alla dessa, i princip omedelbart, när det tas emot
 // Detta görs genom olika ArrayLists som hanterar inputs(StreamManagers från Parrow), outputs(OutputStreams), Sockets och Contacts
 // Notera att servern körs på en separat tråd från resten av programmet via PingThread
-// Detta betyder att en tråd ligger och lyssnar på allt inkommande utan att påverka resten av programmet (i princip)
+// Detta betyder att en tråd ligger och lyssnar efter nya anslutningar till serverSocket 
+// utan att påverka resten av programmet (i princip)
 
 
 class Server extends JPanel implements ObjectStreamListener, ActionListener, WindowListener {
