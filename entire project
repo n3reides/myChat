@@ -1028,7 +1028,9 @@ class ChatParticipant extends JFrame implements ActionListener, ObjectStreamList
     private final ObjectStreamManager MY_MANAGER; // ObjectStreamManager hanterar INPUT streams, den ligger alltså och lyssnar på inkommande meddlanden
     // dessa inkommande meddelanden skickas från Servern
     // händelseförloppet går alltså till ungefär så här:
-    // skriv ett meddelande och klick 'skicka meddelande' -> meddelandet skickas till Server via vår output stream -> meddelandet hanteras i Server och skickas tillbaka till alla ChatParticipants
+    // skriv ett meddelande och klick 'skicka meddelande' -> meddelandet skickas till Server via vår output stream -> 
+    // -> meddelandet hanteras i Server och skickas tillbaka till alla ChatParticipants
+    
     private final ObjectOutputStream OBJECT_OUTPUT; // skicka ett objekt över outputstreamen
     
     // vanliga grafiska delar
