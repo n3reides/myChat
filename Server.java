@@ -72,7 +72,7 @@ class Server extends JPanel implements ObjectStreamListener, ActionListener, Win
 
     Server(int port) throws IOException {
         PING_SERVER_THREAD = new PingThread(port, this); // See PingThread class!
-        // Det här startar en ny tråd! Den tråden lyssnar på inkommande streams
+        // Det här startar en ny tråd! Den tråden lyssnar på inkommande anslutningar via serverSocket
         // Det betyder i princip att main()-tråden fortfarande kan göra andra saker, som att ansluta till servern
         
         PING_SERVER_THREAD.start(); // Tråden behöver såklart startas också
