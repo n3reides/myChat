@@ -1,0 +1,1299 @@
+// Uppgift 5 (och lite mer typ)
+// Max Sonebäck och Olle Dahlstedt
+// STS2A ht2017
+// kommenterad av Olle ca 2018-11-25
+
+// värt att läsa är instruktioner för chatten som hjälplärare
+// kommentarer till den här koden syftar till förståelse, inte lusläsning
+// programmet ska fungera i dess nuvarande form precis som det gjorde förra året
+
+// programmet är byggt med avsikt att du ska kunna hantera det helt och hållet från gränssnittet
+// därmed är gränssnittet väldigt utbyggt, mycket mer så än vad som förväntas av eleverna
+// om du försöker sätta dig in i programmet, använd gärna det grafiska gränssnittet som underlag och jämför i koden vad som händer när du interagerar med det
+
+// de viktigaste klasserna att hålla koll på för hjälplärare är som vanligt Server, Client och ChatParticipant
+// viktigt är att förstå hur Server fungerar med PingThread
+
+// en förenklad modell går som följande:
+
+// väljer du att starta en server så kommer du att göra det via StartServerWindow -> Server 
+// Server: i konstruktorn för Server körs PingThread som ligger och lyssnar efter anslutningar
+// PingThread hanterar alla INKOMMANDE anslutningar till servern och vidarebefordrar detta till Server
+// vad som är inkommande i detta fallet är ju då en Socket! så då har vi en anslutning
+// Se PingThreads run()-metod och kommentarer där, för förtydligande över vad som faktiskt görs i den separata tråden
+// vad som vidarebefordras är bland annat den socket som öppnas och den arraylist över streammanagers som Server hanterar
+// Sedan hanteras alla inkommande object över denna i Server och skickas TILLBAKA via outputstreams
+// ett objekt är i det här fallet något som skickas via en socket över en stream
+// vi har begränsat oss till att endast skicka Strings och Contacts över våra streams, se Server för mer detaljer
+
+// väljer du att starta en client så kommer du att göra det via StartClientWindow -> Client -> ChatParticipant
+// notera att du kan göra det genom gränssnittet även om du redan har startat en server samtidigt
+// detta för att din server hanterar sin serverSocket via en annan tråd
+// se Client och ChatParticipant för det som huvudsakligen är viktigt
+
+// det finns även instruktioner i själva gränssnittet hur du kan använda det
+
+
+
+
+public class MyChat {
+
+    public static void main(String[] args) throws IOException {
+        // En gång i tiden tog vi reda på vad vår IP-adress var genom en print-sats här
+        // Numera kan vi se det direkt från servern när vi startar en ny server
+        // Koden här nedan gör därmed inget, men ligger kvar för sakens skull
+        String systemipaddress = "";
+        try {
+            URL url_name = new URL("http://bot.whatismyipaddress.com");
+            BufferedReader sc = new BufferedReader(new InputStreamReader(url_name.openStream()));
+            systemipaddress = sc.readLine().trim();
+            //    System.out.println(InetAddress.getByName("localhost"));
+        } catch (Exception e) {
+            systemipaddress = "Cannot Execute Properly";
+        }
+        
+        // Main-metoden skapar helt enkelt vårt MainWindow, vilket är varifrån hela gränssnittet körs vidare
+        MainWindow mainFrame = new MainWindow();
+    }
+}
+
+// för enkelhetens skull så har jag lagt MainWindow här nedanför också
+class MainWindow extends JFrame implements ActionListener {
+
+    MainWindow() {
+        setLayout(new GridBagLayout());
+        setSize(500, 300);
+        setTitle("Chat program");
+        setResizable(false);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        JPanel centerPanel = new JPanel();
+        add(centerPanel, new GridBagConstraints());
+        JButton serverStartButton = new JButton("Start server");
+        JButton clientStartButton = new JButton("Start client");
+        JButton exitButton = new JButton("Exit program");
+        JButton instructionsButton = new JButton("Instructions");
+        centerPanel.add(serverStartButton);
+        centerPanel.add(clientStartButton);
+        centerPanel.add(exitButton);
+        centerPanel.add(instructionsButton);
+        serverStartButton.addActionListener(this);
+        clientStartButton.addActionListener(this);
+        exitButton.addActionListener(this);
+        instructionsButton.addActionListener(this);
+        setVisible(true);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        if (((JButton) (ae.getSource())).getText().equals("Start server")) {
+            StartServerWindow serverWindow = new StartServerWindow();
+            dispose();
+        } else if (((JButton) (ae.getSource())).getText().equals("Start client")) {
+            try {
+                StartClientWindow clientWindow = new StartClientWindow();
+                dispose();
+            } catch (IOException ex) {
+                Logger.getLogger(MainWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if (((JButton) (ae.getSource())).getText().equals("Exit program")) {
+            dispose();
+        } else if (((JButton) (ae.getSource())).getText().equals("Instructions")) {
+            JFrame instructionsFrame = new JFrame();
+            instructionsFrame.setSize(400, 300);
+            instructionsFrame.setVisible(true);
+            instructionsFrame.setLayout(new GridBagLayout());
+            instructionsFrame.setResizable(false);
+            JPanel instructionsPanel = new JPanel();
+            JTextArea instructionsArea = new JTextArea();
+            instructionsArea.setEditable(false);
+            JScrollPane instructionsScrollPane = new JScrollPane(instructionsArea);
+            instructionsPanel.add(instructionsScrollPane, new GridBagConstraints());
+            instructionsFrame.add(instructionsPanel, new GridBagConstraints());
+            instructionsArea.append("Welcome to our simple chat program" + "\n" + "Below is how to use it:" + "\n" + "1) Start a new server, with a port of your choice." + "\n" + "2) There you can see your IP and set some basic settings for your room." + "\n" + "3) To connect, add a new chatroom through the client windows." + "\n" + "4) A chatroom connection requires the IP of the server host as well as the port." + "\n" + "5) Once you save the chatroom, you can then access it with a screen name from the client window." + "\n" + "6) There are additional options for sorting different chatrooms." + "\n" + "7) To chat with somebody, just have them enter and save your IP and port as a chatroom and go wild." + "\n" + "8) The chatroom name option is simply an identifier for organizational purposes." + "\n" + "\n" + "This program was created in november 2017 by Max Sonebäck and Olle Dahlstedt as a school project.");
+            instructionsFrame.setTitle("How to use and credits");
+            instructionsFrame.pack();
+        }
+    }
+}
+
+
+// Den här klassen öppnas då du trycker på Start Server
+// Fungerar mestadels som ett grafiskt gränssnitt där du kan välja Port själv
+// Vid klick på JButton 'Start server' så kommer en ny server startas
+// Vi disposar -inte- det här fönstret då vi startar en ny server, så du kan starta en server
+// och sedan ansluta till den utan att behöva öppna en ny instans av programmet
+
+class StartServerWindow extends JFrame implements ActionListener {
+
+    private final JTextField PORT_FIELD;
+
+    // 
+    StartServerWindow() {
+        setLayout(new GridBagLayout());
+        setTitle("Start new server");
+        setSize(new Dimension(400, 300));
+        setResizable(false);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        JPanel centerPanel = new JPanel();
+        add(centerPanel, new GridBagConstraints());
+        centerPanel.setLayout(new GridLayout(0, 1));
+        PORT_FIELD = new JTextField();
+        PORT_FIELD.setPreferredSize(new Dimension(200, 30));
+        centerPanel.add(new JLabel("Choose Port"));
+        centerPanel.add(PORT_FIELD);
+        PORT_FIELD.setText("8191"); // 8191 is the smallest Mersenne prime p such that the Mersenne number M(p) = 2^p - 1 is composite.
+        JButton StartServerButton = new JButton("Start server");
+        JButton backButton = new JButton("Back");
+        centerPanel.add(StartServerButton);
+        centerPanel.add(backButton);
+        StartServerButton.addActionListener(this);
+        backButton.addActionListener(this);
+        setVisible(true);
+    }
+
+    // Listens to the start server or back button
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        if (((JButton) (ae.getSource())).getText().equals("Start server")) {
+            try {
+                if (PORT_FIELD.getText() != null) {
+                    Server newServer = new Server(Integer.parseInt(PORT_FIELD.getText())); // starts a server with the chosen port
+                } else {
+                    Server newServer = new Server(8191);
+                } 
+            } catch (IOException ex) {
+                Logger.getLogger(StartServerWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } else if (((JButton) (ae.getSource())).getText().equals("Back")) {
+            MainWindow newMainWindow = new MainWindow();
+            dispose();
+        }
+    }
+    
+}
+
+// Den här klassen nås när vi väljer Start Client
+// Syftet med klassen är att du ska kunna välja ett 'chatroom' och sedan ansluta till det, om det ligger öppet
+// Att lägga till ett nytt chatroom görs inte här, utan det görs i NewContactWindow
+// En stor del av konstruktorn kan ignoreras, det är bara grafisk kod
+
+// Det mest väsentliga är att det är från den här klassen som vi skapar en Client
+// Se ex.vis startNewClient()-metoden för att se hur det går till
+
+// Alla chatrooms ligger sparade i en .txt-fil som heter MyContacts.txt
+// De flesta metoder i den här klassen hanterar meny-systemet som har med det att göra
+// exempelvis, createContactList() har ingen 'nödvändig' funktion för själva labben
+
+final class StartClientWindow extends JFrame implements ActionListener {
+
+    private JComboBox contactBox;
+    private Contact contactPicked;
+    private final JTextField NAME_FIELD;
+
+    StartClientWindow() throws IOException {
+        setTitle("Start Window");
+        setSize(new Dimension(400, 300));
+        setResizable(false);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        JPanel northPanel = new JPanel();
+        JPanel centerPanel = new JPanel();
+        centerPanel.setLayout(new GridLayout(0, 1));
+        JPanel southPanel = new JPanel();
+        createContactsFolder();
+        createContactBox();
+        JButton newContactButton = new JButton("Add new chatroom");
+        JButton backButton = new JButton("Back");
+        NAME_FIELD = new JTextField();
+        NAME_FIELD.addActionListener(this);
+        JButton chooseFolderButton = new JButton("Choose chatroom folder");
+        northPanel.add(new JLabel("Pick your chatroom folder"), BorderLayout.NORTH);
+        northPanel.add(chooseFolderButton, BorderLayout.SOUTH);
+        southPanel.add(newContactButton);
+        southPanel.add(backButton, BorderLayout.EAST);
+        centerPanel.add(new JLabel("Choose chatroom"));
+        centerPanel.add(contactBox);
+        centerPanel.add(new JLabel("Write your username"));
+        centerPanel.add(NAME_FIELD);
+        JButton connectButton = new JButton("Connect");
+        connectButton.addActionListener(this);
+        centerPanel.add(connectButton, BorderLayout.SOUTH);
+        chooseFolderButton.addActionListener(this);
+        backButton.addActionListener(this);
+        newContactButton.addActionListener(this);
+        add(northPanel, BorderLayout.NORTH);
+        add(centerPanel, BorderLayout.CENTER);
+        add(southPanel, BorderLayout.SOUTH);
+        setVisible(true);
+        contactBox.addActionListener(this);
+    }
+
+    
+    private void startNewClient() {
+        if (contactPicked != null) {
+            if (NAME_FIELD.getText().length() > 0) {
+                String name = NAME_FIELD.getText();
+                String IP = contactPicked.getIP();
+                int port = contactPicked.getPort();
+                Client newClient = new Client(new Contact(name, IP, port));
+                NAME_FIELD.setText("");
+            } else { // om användaren ej väljer ett eget namn
+                NAME_FIELD.setText("IAmToStupidToEnterAUsername"); 
+            }
+        }
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        if (ae.getSource() instanceof JComboBox) {
+            JComboBox cb = (JComboBox) ae.getSource();
+            contactPicked = (Contact) cb.getSelectedItem();
+        } else if (ae.getSource() instanceof JButton) {
+            if (((JButton) (ae.getSource())).getText().equals("Add new chatroom")) {
+                NewContactWindow newContact = new NewContactWindow();
+                newContact.setVisible(true);
+                this.dispose();
+                
+                
+            // Trycker du på connect så startas en ny client! se metoden ovan
+            } else if (((JButton) (ae.getSource())).getText().equals("Connect")) {
+                startNewClient();
+                
+               
+            } else if (((JButton) (ae.getSource())).getText().equals("Choose chatroom folder")) {
+                File dir = new File("Contacts/");
+                if (!dir.exists()) {
+                    dir.mkdirs();
+                }
+                refreshComboBox();
+            } else if (((JButton) (ae.getSource())).getText().equals("Back")) {
+                MainWindow newMainWindow = new MainWindow();
+                dispose();
+            }
+        } else if (ae.getSource() instanceof JTextField) {
+            startNewClient();
+        }
+    }
+
+    
+    // metoderna här nedan hanterar själva väljandet av chatroom
+    // inte lika viktigt för hjälplärare att kunna
+    
+    void createContactsFolder() {
+        File dir = new File("Contacts/");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        File contacts = new File(dir, "myContacts.txt");
+        if (!contacts.exists()) {
+            try {
+                contacts.createNewFile();
+            } catch (IOException ex) {
+                Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    void createContactBox() {
+        try {
+            contactBox = new JComboBox(createContactList("myContacts.txt"));
+            ListCellRenderer renderer = new ContactCellRenderer();
+            contactBox.setRenderer(renderer);
+            contactPicked = (Contact) contactBox.getSelectedItem();
+        } catch (IOException ex) {
+            Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+
+
+    private void refreshComboBox() {
+        JFileChooser contactFolderChooser = new JFileChooser("Contacts/");
+        int returnVal = contactFolderChooser.showOpenDialog(null);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = contactFolderChooser.getSelectedFile();
+            String fileName = selectedFile.getName();
+            System.out.println(fileName);
+            try {
+                Contact[] myContacts = createContactList(fileName);
+                contactBox.removeAllItems();
+                for (Contact aContact : myContacts) {
+                    contactBox.addItem(aContact);
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(StartClientWindow.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+//
+    
+    Contact[] createContactList(String fileName) throws IOException {
+        File file = new File("Contacts/", fileName);
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        StringBuffer stringBuffer = new StringBuffer();
+        String line;
+        ArrayList<String> lines = new ArrayList<>();
+        while ((line = bufferedReader.readLine()) != null) {
+            stringBuffer.append(line);
+            lines.add(stringBuffer.toString());
+            stringBuffer.setLength(0);
+        }
+        ArrayList<String> NAMES = new ArrayList<>();
+        ArrayList<String> IP_ADDRESSES = new ArrayList<>();
+        ArrayList<Integer> PORTS = new ArrayList<>();
+        for (int i = 0; i < lines.size(); i++) {
+            String string = lines.get(i);
+            String[] splitString = string.split("\\s+");
+            NAMES.add(splitString[0]);
+            IP_ADDRESSES.add(splitString[1]);
+            PORTS.add(Integer.parseInt(splitString[2]));
+        }
+        Contact[] contactList = new Contact[lines.size()];
+        int i = 0;
+        while (i < contactList.length) {
+            contactList[i] = new Contact(NAMES.get(i), IP_ADDRESSES.get(i), PORTS.get(i));
+            i++;
+        }
+        return contactList;
+    }
+    
+}
+
+
+// Jämte ChatParticipant är detta nog den absolut viktigaste klassen
+// Syftet med servern är att hantera alla inkommande meddelanden, anslutningar och så vidare
+// Servern ska också skicka vidare alla dessa, i princip omedelbart, när det tas emot
+// Detta görs genom olika ArrayLists som hanterar inputs(StreamManagers från Parrow), outputs(OutputStreams), Sockets och Contacts
+// Notera att servern körs på en separat tråd från resten av programmet via PingThread
+// Detta betyder att en tråd ligger och lyssnar på allt inkommande utan att påverka resten av programmet (i princip)
+
+
+class Server extends JPanel implements ObjectStreamListener, ActionListener, WindowListener {
+
+    // När du skapar en server så definieras alla dessa variabler
+
+    final ArrayList<ObjectOutputStream> OUTPUT_STREAM_ARRAY_LIST = new ArrayList<>();
+    final ArrayList<ObjectStreamManager> STREAM_MANAGER_ARRAY_LIST = new ArrayList<>();
+    private final ArrayList<Socket> SOCKET_ARRAY_LIST = new ArrayList<>();
+    private final ArrayList<Contact> CONTACT_ARRAY_LIST = new ArrayList<>();
+
+    
+    int totalSeconds;
+    int totalMinutes;
+    int totalHours;
+    int connections;
+    
+    private final JTextField WELCOME_MSG_FIELD;
+    private final PingThread PING_SERVER_THREAD;
+    private final JTextArea WELCOME_MSG_AREA;
+    JFrame serverStatusWindow;
+    String UPTIME;
+    String welcomeMessage;
+    JLabel uptimeLabel;
+    JPanel serverPanel;
+    JLabel connectionsLabel;
+
+    Server(int port) throws IOException {
+        PING_SERVER_THREAD = new PingThread(port, this); // See PingThread class!
+        // Det här startar en ny tråd! Den tråden lyssnar på inkommande streams
+        // Det betyder i princip att main()-tråden fortfarande kan göra andra saker, som att ansluta till servern
+        
+        PING_SERVER_THREAD.start(); // Tråden behöver såklart startas också
+    
+        // Här nedan följer den grafiska koden för server-fönstret
+        serverStatusWindow = new JFrame();
+        connections = 0;
+        totalSeconds = 0;
+        totalMinutes = 0;
+        totalHours = 0;
+        UPTIME = "";
+        welcomeMessage = "";
+        serverStatusWindow.setLayout(new GridBagLayout());
+        serverPanel = new JPanel();
+        serverStatusWindow.add(serverPanel, new GridBagConstraints());
+        serverPanel.setLayout(new GridLayout(0, 1));
+        serverStatusWindow.setTitle("New server");
+        serverStatusWindow.setVisible(true);
+        serverStatusWindow.setSize(400, 300);
+        serverStatusWindow.setResizable(false);
+        WELCOME_MSG_FIELD = new JTextField(30);
+        JButton closeServerButton = new JButton("Close server");
+        JButton sendButton = new JButton("Add welcome message");
+        uptimeLabel = new JLabel("Server uptime: " + UPTIME);
+        connectionsLabel = new JLabel("Current number of connections: " + connections);
+        WELCOME_MSG_AREA = new JTextArea(3, 20);
+        WELCOME_MSG_AREA.setEditable(false);
+        WELCOME_MSG_AREA.setLineWrap(true);
+        JScrollPane messageAreaScroller = new JScrollPane(WELCOME_MSG_AREA);
+        messageAreaScroller.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        serverPanel.add(new JLabel("Your IP: " + findLocalIPAddress()));
+        serverPanel.add(new JLabel("IF you want to enter your own chatroom on this device: "));
+     
+        // Du kan bara ansluta till ditt egna chattrum via din egna lokala IP-adress
+        serverPanel.add(new JLabel(InetAddress.getByName("localhost").toString()));
+        serverPanel.add(connectionsLabel);
+        serverPanel.add(uptimeLabel);
+        serverPanel.add(new JLabel("Enter a welcome message here:"));
+        serverPanel.add(WELCOME_MSG_FIELD);
+        serverPanel.add(new JLabel("The current welcome message is: "));
+        serverPanel.add(messageAreaScroller);
+        serverPanel.add(sendButton);
+        serverPanel.add(closeServerButton);
+        
+        // ActionListeners
+        closeServerButton.addActionListener(this);
+        sendButton.addActionListener(this);
+        serverStatusWindow.addWindowListener(this);
+        
+        // En timer för att se hur länge servern har varit aktiv
+        Timer uptimeTimer = new Timer(1000, this);
+        uptimeTimer.start();
+    }
+
+    // Den här metoden letar upp din IP-adress som den är från nätet (alltså inte den lokala!!)
+    // Om du vill att andra personer ska kunna ansluta till din server så behövs denna adress
+    // Notera att du fortfarande kommer behöva öppna den valda porten i din brandvägg för att detta ska fungera
+    private String findLocalIPAddress() {
+        String systemipaddress = "";
+        try {
+            URL url_name = new URL("http://bot.whatismyipaddress.com");
+            BufferedReader sc = new BufferedReader(new InputStreamReader(url_name.openStream())); // Läser av IP-adressen från denna sida
+            systemipaddress = sc.readLine().trim();
+        } catch (Exception e) {
+            systemipaddress = "Cannot Execute Properly";
+        }
+        return systemipaddress;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        if (ae.getSource() instanceof JButton) {
+            if (((JButton) (ae.getSource())).getText().equals("Close server")) {
+                try {
+                    sendMessageToAllStreams("The server is now closing. bai");
+                    PING_SERVER_THREAD.closeServer(); // Notera ordningen vi stänger ner allt när vi väljer att stänga servern
+                    CONTACT_ARRAY_LIST.clear(); // Först tråden, cleara sedan contact-array, stäng sedan ner alla sockets och slutligen stäng fönstret
+                    updateConnectedClients();
+                    closeAllSockets(); 
+                    serverStatusWindow.dispose(); 
+                } catch (IOException ex) {
+                    Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+                }
+
+            } else if (((JButton) (ae.getSource())).getText().equals("Add welcome message")) {
+                welcomeMessage = WELCOME_MSG_FIELD.getText();
+                WELCOME_MSG_AREA.setText(welcomeMessage);
+                WELCOME_MSG_FIELD.setText("");
+            }
+
+        } else if (ae.getSource() instanceof Timer) {
+            totalSeconds++;
+            if (totalSeconds >= 60) {
+                totalMinutes++;
+                totalSeconds = 0;
+                if (totalMinutes >= 60) {
+                    totalHours++;
+                }
+            }
+            UPTIME = Integer.toString(totalHours) + " hours, " + Integer.toString(totalMinutes) + " minutes, " + Integer.toString(totalSeconds) + " seconds.";
+            uptimeLabel.setText("Server uptime: " + UPTIME);
+            connectionsLabel.setText("Current number of connections: " + connections);
+        }
+    }
+
+    // En metod för att stänga ner alla sockets i Socket arraylist
+    private void closeAllSockets() {
+        for (Socket socket : SOCKET_ARRAY_LIST) {
+            try {
+                socket.close();
+            } catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        for (ObjectStreamManager OSM : STREAM_MANAGER_ARRAY_LIST) {
+            OSM.closeManager();
+        }
+    }
+
+    // Den här metoden går ut på att undersöka huruvida en client är eller inte är i listan av clients
+    // Kan verka onödigt, men handlar om att hålla koll på vilken tid av överföring det handlar om
+    // Ex.vis, om du väljer att avbryta uppkopplingen till servern så kommer din contact att skickas till servern
+    // Detta för att servern kan hålla koll på vilka kontakter som är anslutna
+    // Likaså skickas din contact till servern när du väljer att ansluta till den
+
+    private boolean isClientInContactArray(Contact client) {
+        boolean inArray = false;
+        for (int i = 0; i < CONTACT_ARRAY_LIST.size(); i++) {
+            if (client.equals(CONTACT_ARRAY_LIST.get(i))) {
+                // Om clienten redan finns i contact array list,
+                // så betyder det att den nu har valt att avbryta anslutningen
+                // det är den enda anledningen till varför samma contact skulle skickas till servern igen
+                // alltså tar vi bort dem från contact array listen och från output stream array listen
+                CONTACT_ARRAY_LIST.remove(i); 
+                OUTPUT_STREAM_ARRAY_LIST.remove(i); 
+                connections--;
+                inArray = !inArray;
+                break;
+            }
+        }
+        return inArray;
+    }
+
+    // Likaså, om en client inte finns i contact array list, så betyder ovanstående boolean att det anslutit en ny client
+    // Då körs den här metoden för att lägga till clienten i arraylisten av contacts
+   
+    private void updateConnectedClients() {
+        for (ObjectOutputStream OS : OUTPUT_STREAM_ARRAY_LIST) { // för varje outputstream i outputstream-arraylisten
+            try {
+                OS.writeObject(CONTACT_ARRAY_LIST.clone()); //skriver contact-arraylisten till denna outputstream
+                OS.flush(); // uppdaterar denna outputstream (så att den nya contacten tar emot allt från outputstreamen
+            } catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    // När det händer att ett meddelande kommer via lyssnaren (se objectRecieved())
+    // Den här metoden kommer försöka skicka det meddelandet till varje outputstream
+    // med andra ord, skicka det inkomna meddelandet till alla anslutna clients
+    
+    private void sendMessageToAllStreams(String message) {
+        for (ObjectOutputStream OS : OUTPUT_STREAM_ARRAY_LIST) {
+            try {
+                OS.writeObject(message); // det meddelande som tas emot skickas alltså tillbaka (till alla! inklusive den som skickade det)
+                OS.flush(); // uppdaterar outputstreamen efter att meddelandet skickas
+            } catch (IOException ex) {
+                Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        
+    }
+
+    // När någon ansluter till servern skickar denna metod ett meddelande till alla!
+    // se objectRecieved() för detaljer om hur vi vet att en anslutning sker
+    
+    private void sendEnterMessageToStreams(Contact newContact) {
+        for (int i = 0; i < CONTACT_ARRAY_LIST.size(); i++) {
+            if (newContact != CONTACT_ARRAY_LIST.get(i)) {
+                try {
+                    OUTPUT_STREAM_ARRAY_LIST.get(i).writeObject(newContact.getName() + " has entered the chatroom.");
+                    // getName från den nya kontacten och för varje ansluten outputstream, skicka detta meddelande
+                    OUTPUT_STREAM_ARRAY_LIST.get(i).flush(); // uppdatera även outputstreamen
+                } catch (IOException ex) {
+                    Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }
+
+    // Det här här vi lyssnar efter inkommande meddelande
+    // Kom ihåg att detta görs via PingThread! så det sker kontinuerligt
+    // syftet med lyssnarmetoden är att avgöra huruvida det är en ny connection eller ett inkommande meddelande
+    // eller mer specifikt, vilken typ av Object som har mottagits, om det är en String eller en Contact
+
+    @Override
+    public void objectReceived(int number, Object object, Exception exception) {
+        if (exception == null) {
+            // Exception == null betyder att vi har mottagit någonting snarare än ingenting
+            if (object instanceof Contact) {
+                // OM objektet är av Contact-typen, så har vi ANTINGEN en ny contact som anslutit eller en gammal contact som lämnat servern
+                Contact client = (Contact) object; // vi castar objectet från object till Contact eftersom vi vet att det är en contact
+                // notera att det därmed inte heller kommer att casta en exception eftersom objectet INTE är en NULL
+                if (!isClientInContactArray(client)) {
+                    // om det INTE är en gammal client, skicka ett anslutningsmeddelande
+                    sendEnterMessageToStreams(client);
+                    CONTACT_ARRAY_LIST.add(client); // lägg också till den nya clienten till contact_array_list
+                } else {
+                    // om den redan är i contact_array_list så betyder det att de har lämnat rummet :(
+                    String leaveMessage = client.getName() + " has left the chat room.";
+                    sendMessageToAllStreams(leaveMessage);
+                }
+                updateConnectedClients(); // uppdatera nuvarande anslutna clienter
+            } else if (object instanceof String) {
+                // om det inkomna objectet är en string
+                String message = (String) object; // casta till string
+                sendMessageToAllStreams(message); // skicka det vidare
+            }
+        }
+    }
+
+    @Override
+    public void windowOpened(WindowEvent we) {
+    }
+
+    // Note the order of each command here
+    @Override
+    public void windowClosing(WindowEvent we) {
+        try {
+            sendMessageToAllStreams("The server is now closing. bai");
+            CONTACT_ARRAY_LIST.clear(); // Clear the contact array list
+            updateConnectedClients(); // Update the connection list
+            closeAllSockets(); // Close the sockets!
+            PING_SERVER_THREAD.closeServer(); // Close the server thread!
+            serverStatusWindow.dispose(); // Then dispose the window
+        } catch (IOException ex) {
+            Logger.getLogger(Server.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
+    public void windowClosed(WindowEvent we) {
+    }
+
+    @Override
+    public void windowIconified(WindowEvent we) {
+    }
+
+    @Override
+    public void windowDeiconified(WindowEvent we) {
+    }
+
+    @Override
+    public void windowActivated(WindowEvent we) {
+    }
+
+    @Override
+    public void windowDeactivated(WindowEvent we) {
+    }
+    
+}
+
+
+// Parrows klass
+// se kommentarer i mail från honom
+// alternativt lita på att object stream manager hanterar inkommande objects över vår stream
+
+class ObjectStreamManager {
+    
+    private final ObjectInputStream theStream;
+    private final ObjectStreamListener theListener;
+    private final int theNumber;
+    private volatile boolean stopped = false;
+
+    public ObjectStreamManager(int number, ObjectInputStream stream, ObjectStreamListener listener) {
+        theNumber = number;
+        theStream = stream;
+        theListener = listener;
+        new InnerListener().start();
+    }
+
+    private void callback(final Object object, final Exception exception) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                if (!stopped) {
+                    theListener.objectReceived(theNumber, object, exception);
+                    if (exception != null) {
+                        closeManager();
+                    }
+                }
+            }
+        });
+    }
+
+    private class InnerListener extends Thread {
+
+        @Override
+        public void run() {
+            while (!stopped) {
+                try {
+                    callback(theStream.readObject(), null);
+                } catch (Exception e) {
+                    callback(null, e);
+                }
+            }
+            try {
+                theStream.close();
+            } catch (IOException e) {
+            }
+        }
+    }
+
+    public void closeManager() {
+        stopped = true;
+    }
+    
+}
+
+// vi overridear denna
+
+interface ObjectStreamListener {
+
+    public void objectReceived(int number, Object object, Exception exception);
+    
+}
+
+
+// Detta är en klass som hanterar skapandet av nya chatrooms från gränssnittet
+// det betyder i princip att det är oväsentligt att hålla koll på vad som händer här för hjälplärare
+// den intresserade kan ju titta lite noggrannare på hur vi skriver in nya kontakter till vår valda "folder"
+
+class NewContactWindow extends JFrame implements ActionListener {
+    
+    private final JTextField NAME_FIELD;
+    private final JTextField IP_FIELD;
+    private final JTextField PORT_FIELD;
+    private final JLabel CHATROOM_FOLDER_LABEL;
+    private final JLabel NEW_CHATROOM_FOLDER_LABEL = new JLabel();
+    private JTextField folderNameField;
+    private File contactFile;
+    private Path file;
+    private String fileName;
+    private JFrame newFolderFrame;
+    private JFileChooser contactFolderChooser;
+
+    NewContactWindow() {
+        setTitle("New Chatroom");
+        this.setSize(new Dimension(400, 300));
+        setResizable(false);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        createContactsFolder();
+        CHATROOM_FOLDER_LABEL = new JLabel("You are now editing " + fileName);
+        NAME_FIELD = new JTextField();
+        IP_FIELD = new JTextField();
+        PORT_FIELD = new JTextField();
+        addComponents();
+    }
+
+    private void createContactsFolder() {
+        fileName = "MyContacts.txt";
+        File dir = new File("Contacts/");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        contactFile = new File(dir, fileName);
+        file = contactFile.toPath();
+    }
+
+    private void addComponents() {
+        JPanel textAreaPanel = new JPanel();
+        GridLayout textLayout = new GridLayout(0, 1);
+        textAreaPanel.setLayout(textLayout);
+        textAreaPanel.add(CHATROOM_FOLDER_LABEL);
+        textAreaPanel.add(new JLabel("name:"));
+        textAreaPanel.add(NAME_FIELD);
+        textAreaPanel.add(new JLabel("IP:"));
+        textAreaPanel.add(IP_FIELD);
+        textAreaPanel.add(new JLabel("Port:"));
+        textAreaPanel.add(PORT_FIELD);
+        JPanel northPanel = new JPanel();
+        JButton chooseFolderButton = new JButton("Choose chatroom folder");
+        JButton newFolderButton = new JButton("Add new folder");
+        northPanel.add(chooseFolderButton, BorderLayout.WEST);
+        northPanel.add(newFolderButton, BorderLayout.EAST);
+        add(northPanel, BorderLayout.NORTH);
+        add(textAreaPanel, BorderLayout.CENTER);
+        JPanel buttonPanel = new JPanel();
+        JButton saveButton = new JButton("Save chatroom");
+        JButton backButton = new JButton("Back");
+        buttonPanel.add(saveButton);
+        buttonPanel.add(backButton);
+        add(buttonPanel, BorderLayout.SOUTH);
+        GridLayout buttonLayout = new GridLayout(0, 2);
+        buttonPanel.setLayout(buttonLayout);
+        chooseFolderButton.addActionListener(this);
+        newFolderButton.addActionListener(this);
+        saveButton.addActionListener(this);
+        backButton.addActionListener(this);
+    }
+
+    private void saveContact() throws IOException {
+        ArrayList<String> lines = new ArrayList<>();
+        String name = NAME_FIELD.getText();
+        name = name.replaceAll("\\s+", ".");
+        if (name.length() == 0) {
+            CHATROOM_FOLDER_LABEL.setText("Please enter a chatroom name");
+            return;
+        }
+        String IP = IP_FIELD.getText();
+        IP = IP.replaceAll("\\s+", "");
+        if (IP.length() == 0 || hasLetters(IP)) {
+            CHATROOM_FOLDER_LABEL.setText("Please enter a valid IP Address");
+            return;
+        }
+        String port = PORT_FIELD.getText();
+        port = port.replaceAll("\\s+", "");
+        int intPort;
+        try {
+            intPort = Integer.parseInt(port);
+        } catch (NumberFormatException ex) {
+            CHATROOM_FOLDER_LABEL.setText("Please enter a valid port number");
+            return;
+        }
+        NAME_FIELD.setText("");
+        IP_FIELD.setText("");
+        PORT_FIELD.setText("");
+        String line = name + " " + IP + " " + Integer.toString(intPort);
+        lines.add(line);
+        if (contactFile.exists()) {
+            Files.write(file, lines, Charset.forName("UTF-8"), StandardOpenOption.APPEND);
+        } else {
+            Files.write(file, lines, Charset.forName("UTF-8"));
+        }
+        CHATROOM_FOLDER_LABEL.setText("You are now editing " + fileName);
+    }
+
+    private boolean hasLetters(String IP) {
+        boolean containLetters = false;
+        for (char ch : IP.toCharArray()) {
+            if (Character.isLetter(ch)) {
+                containLetters = true;
+                break;
+            }
+        }
+        return containLetters;
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        if (ae.getSource() instanceof JButton) {
+            switch (((JButton) (ae.getSource())).getText()) {
+                case "Save chatroom":
+                    try {
+                        saveContact();
+                    } catch (IOException ex) {
+                        Logger.getLogger(NewContactWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    break;
+                case "Back":
+                    try {
+                        StartClientWindow backToStartWindow = new StartClientWindow();
+                        this.dispose();
+                    } catch (IOException ex) {
+                        Logger.getLogger(NewContactWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    break;
+                case "Add new folder":
+                    createNewFolderFrame();
+                    this.dispose();
+                    break;
+                case "Back to new chatroom window":
+                    NewContactWindow newContact = new NewContactWindow();
+                    newContact.setVisible(true);
+                    newFolderFrame.dispose();
+                    break;
+                case "Create new folder":
+                    try {
+                        fileName = folderNameField.getText() + ".txt";
+                        File dir = new File("Contacts/");
+                        dir.mkdirs();
+                        contactFile = new File(dir, fileName);
+                        if (!contactFile.exists()) {
+                            contactFile.createNewFile();
+                        }
+                        folderNameField.setText("");
+                        NEW_CHATROOM_FOLDER_LABEL.setText("Folder created!");
+                    } catch (IOException ex) {
+                        Logger.getLogger(NewContactWindow.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    break;
+                case "Choose chatroom folder":
+                    contactFolderChooser = new JFileChooser("Contacts/");
+                    int returnVal = contactFolderChooser.showOpenDialog(this);
+                    if (returnVal == JFileChooser.APPROVE_OPTION) {
+                        File chosenFile = contactFolderChooser.getSelectedFile();
+                        fileName = (String) chosenFile.getName();
+                        CHATROOM_FOLDER_LABEL.setText("You are editing folder " + fileName);
+                        File dir = new File("Contacts/");
+                        dir.mkdirs();
+                        contactFile = new File(dir, fileName);
+                        file = contactFile.toPath();
+                        repaint();
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    /* This method will create the frame for entering new folders to the Contacts folder. */
+    void createNewFolderFrame() {
+        newFolderFrame = new JFrame();
+        newFolderFrame.setLayout(new GridBagLayout());
+        newFolderFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        newFolderFrame.setTitle("Create new folder");
+        newFolderFrame.setSize(new Dimension(400, 300));
+        newFolderFrame.setResizable(false);
+        JPanel northPanel = new JPanel();
+        northPanel.setLayout(new GridLayout(0, 1));
+        JButton backButton = new JButton("Back to new chatroom window");
+        JButton newFolderButton = new JButton("Create new folder");
+        folderNameField = new JTextField();
+        folderNameField.setPreferredSize(new Dimension(200, 30));
+        northPanel.add(NEW_CHATROOM_FOLDER_LABEL);
+        northPanel.add(new JLabel("Enter folder name here:"));
+        northPanel.add(folderNameField);
+        newFolderFrame.add(northPanel, new GridBagConstraints());
+        northPanel.add(newFolderButton);
+        northPanel.add(backButton);
+        newFolderFrame.setVisible(true);
+        backButton.addActionListener(this);
+        newFolderButton.addActionListener(this);
+    }
+    
+}
+
+
+// Istället för att ha varje 'client' med dessa variabler separerade
+// då skulle vi behöva hantera de viktiga saker som ingår här separat över hela programmet
+// då har vi en klass Contact varpå objektet Contact lättare kan hanteras
+// lite objektorientering, m.a.o
+
+class Contact implements Serializable {
+    
+    private final String CONTACT_NAME;
+    private final String CONTACT_IP;
+    private final int CONTACT_PORT;
+
+    Contact(String name, String IP, int PORT) {
+        CONTACT_NAME = name;
+        CONTACT_IP = IP;
+        CONTACT_PORT = PORT;
+    }
+
+    String getName() {
+        return CONTACT_NAME;
+    }
+
+    String getIP() {
+        return CONTACT_IP;
+    }
+
+    int getPort() {
+        return CONTACT_PORT;
+    }
+    
+}
+
+// Bara ett meddelande till dig som ChatParticipant att servern har stängts ner
+// Ingår i uppgift 5:s beskrivning
+class CloseDialog extends JDialog implements Serializable, ActionListener {
+    
+    CloseDialog() {
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+        setSize(300, 100);
+        setResizable(false);
+        setTitle("Chat ended :(");
+        JPanel panel = new JPanel();
+        panel.setLayout(new BorderLayout());
+        panel.add(new JLabel("The other person has closed the connection."), BorderLayout.CENTER);
+        this.add(panel);
+        JButton okButton = new JButton("OK");
+        okButton.setSize(20, 30);
+        okButton.addActionListener(this);
+        this.add(okButton, BorderLayout.SOUTH);
+    }
+
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        this.dispose();
+    }
+    
+}
+
+// en client skapas och då körs ChatParticipant med vår socket och vår contact som inparametrar
+// värt att notera, helt enkelt, att detta utgör själva basen för hur du ansluter till en Server
+// om servern finns så kommer serverSocket ta emot din Socket och skapa en anslutning
+// också värt att notera att själva anslutningen inte räcket, utan du behöver fortfarande en inputStream och en outputStream
+// ChatParticipant öppnar ett nytt chattfönster!
+
+class Client {
+    
+    private Socket mySocket;
+    private ChatParticipant client;
+
+    Client(Contact myContact) {
+        try {
+            mySocket = new Socket(myContact.getIP(), myContact.getPort());
+            client = new ChatParticipant(mySocket, myContact);
+        } catch (IOException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+}
+
+// ChatParticipant är vår chattruta
+// en av de 3 viktigaste klasserna
+// det är den här som körs när du (som client) ansluter till en server
+// jag har försökt separera de 'oväsentliga' grafiska delarna
+// de flesta kommentarer kommer att förtydliga vad som sker 'under ytan'
+
+class ChatParticipant extends JFrame implements ActionListener, ObjectStreamListener, WindowListener {
+    
+    // en ChatParticipant behöver en Socket, en contact
+    private final Socket MY_SOCKET;
+    private final Contact THIS_CONTACT; // som namnet antyder, den Contact som ligger sparad här är den Contact du just nu chattar via
+    // Alla andra contacts ligger sparade i Server
+    private final ObjectStreamManager MY_MANAGER; // ObjectStreamManager hanterar INPUT streams, den ligger alltså och lyssnar på inkommande meddlanden
+    // dessa inkommande meddelanden skickas från Servern
+    // händelseförloppet går alltså till ungefär så här:
+    // skriv ett meddelande och klick 'skicka meddelande' -> meddelandet skickas till Server via vår output stream -> meddelandet hanteras i Server och skickas tillbaka till alla ChatParticipants
+    private final ObjectOutputStream OBJECT_OUTPUT; // skicka ett objekt över outputstreamen
+    
+    // vanliga grafiska delar
+    private JScrollPane scrollPaneTextArea;
+    private JScrollPane scrollPaneContactsArea;
+    private JTextField textField;
+    private JTextArea textArea;
+    private JTextArea contactsArea;
+    private JButton sendButton;
+    private JButton closeButton;
+    private JPanel mainPanel;
+    private JPanel southPanel;
+    private JPanel eastPanel;
+
+    ChatParticipant(Socket socket, Contact myContact) throws IOException { // Vi tar alltså emot en socket och en Contact från client
+        setTitle(myContact.getName());
+        setLocationRelativeTo(null);
+        setResizable(false);
+        setVisible(true);
+        createMisc();
+        createPanels();
+        addContentToPanels();
+        pack();
+        
+        // interaktiva lyssnare
+        textField.addActionListener(this);
+        sendButton.addActionListener(this);
+        closeButton.addActionListener(this);
+        addWindowListener(this); 
+        // windowListener gör att vi kan hantera vad som händer om du 'kryssar' fönstret istället för att klicka på Close
+        
+        // vår socket fås från Client
+        MY_SOCKET = socket;
+        // vi skapar en outputStream
+        OBJECT_OUTPUT = new ObjectOutputStream(MY_SOCKET.getOutputStream());
+        // vår streamManager är alltså vår lyssnare! det är genom den vi tar emot meddelanden
+        MY_MANAGER = new ObjectStreamManager((int) (Math.random() * 100), new ObjectInputStream(MY_SOCKET.getInputStream()), this);
+        
+        // det här är du
+        THIS_CONTACT = myContact;
+        
+        OBJECT_OUTPUT.writeObject(THIS_CONTACT); // det första du gör är att skicka din Contact över outputStream till Servern
+    }
+    
+    // jag har lagt actionPerformed och objectRecieved ovanför metoderna de anropar - så håll koll på metodanropen och referera till dem
+    @Override
+    public void actionPerformed(ActionEvent ae) {
+        // det finns tv olika knappar, antingen Close eller Send message
+        if (ae.getSource() instanceof JButton) {
+            if (((JButton) (ae.getSource())).getText().equals("Close")) {
+                // har du tryckt på close? stäng fönstret och avsluta uppkopplingen
+                try {
+                    closeChatWindow();
+                } catch (IOException ex) {
+                    dispose();
+                }
+            } else {
+                // annars har du tryckt på Send message, så anropa send()
+                try {
+                    send();
+                } catch (IOException | ClassNotFoundException ex) {
+                    Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        } else if (ae.getSource() instanceof JTextField) {
+            //det här betyder att du tryckt på enter, så du anropar send()
+            // att trycka på enter ingår alltså i JTextField
+            try {
+                send();
+            } catch (IOException | ClassNotFoundException ex) {
+                Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    @Override
+    public void objectReceived(int number, Object object, Exception exception) {
+        if (exception == null) {
+            try {
+                if (object instanceof String) { //om du har tagit emot en string
+                    String message = (String) object; // casta det mottagna objektet till en string
+                    display(message); // anropa display så att meddelandet dyker upp i din chatfield
+                    
+                } else if (object != null && object instanceof Integer) {
+                    // alltså, när vi stänger ner servern så skickar vi en int
+                    // det är bara ett arbiträrt val, skulle lika gärna kunna varit en specifik string typ 'Closing'
+                    MY_SOCKET.close();
+                    dispose();
+                    
+                } else if (object instanceof ArrayList) {
+                    // om nya anslutningar sker till servern så skickas en ArrayList från Servern
+                    // Då uppdateras contactsArea där alla anslutna kontakter visas
+                    contactsArea.setText("");
+                    ArrayList<Contact> contactArray = new ArrayList((ArrayList<Contact>) object);
+                    for (Contact contact : contactArray) {
+                        contactsArea.append(contact.getName() + "\n");
+                    }
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (ClassNotFoundException ex) {
+                Logger.getLogger(ChatParticipant.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+
+    
+    // Skicka ett meddelande, över vår outputStream, till Server
+    private void send() throws IOException, ClassNotFoundException {
+        try {
+            String message = THIS_CONTACT.getName() + " : " + textField.getText(); 
+            //ta texten från textField och skicka det med ditt namn
+            textField.setText("");
+            OBJECT_OUTPUT.writeObject(message);
+            OBJECT_OUTPUT.flush();
+        } catch (IOException e) {
+        }
+    }
+    // om ett meddelande tas emot, lägg till det till textArea
+    private void display(String message) throws IOException, ClassNotFoundException {
+        textArea.append(message + "\n");
+    }
+
+    // hanterar vad som behövs göras när du stänger fönstret
+    // det är viktigt vilken ordning detta görs i
+    // du behöver stänga uppkopplingen mot Server innan du stänger tråden som kör fönstret
+    void closeChatWindow() throws IOException {
+        MY_MANAGER.closeManager();
+        OBJECT_OUTPUT.writeObject(THIS_CONTACT);
+        OBJECT_OUTPUT.close();
+        dispose();
+    }
+
+    // grafisk kod
+    // oviktig
+    final void createMisc() {
+        int fieldWidth = 30;
+        int rows = 20;
+        int textAreaColumns = 40;
+        int contactsAreaColumns = 15;
+        textField = new JTextField(fieldWidth);
+        sendButton = new JButton("Send");
+        closeButton = new JButton("Close");
+        textArea = new JTextArea(rows, textAreaColumns);
+        textArea.setLineWrap(true);
+        textArea.setEditable(false);
+        contactsArea = new JTextArea(rows, contactsAreaColumns);
+        contactsArea.setEditable(false);
+    }
+
+    final void addContentToPanels() {
+        mainPanel.add(scrollPaneTextArea, BorderLayout.CENTER);
+        eastPanel.add(scrollPaneContactsArea, BorderLayout.EAST);
+        southPanel.add(closeButton, BorderLayout.WEST);
+        southPanel.add(textField, BorderLayout.CENTER);
+        southPanel.add(sendButton, BorderLayout.EAST);
+    }
+
+    final void createPanels() {
+        mainPanel = new JPanel(new BorderLayout());
+        southPanel = new JPanel(new BorderLayout());
+        eastPanel = new JPanel(new BorderLayout());
+        scrollPaneContactsArea = new JScrollPane(contactsArea);
+        scrollPaneContactsArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        scrollPaneTextArea = new JScrollPane(textArea);
+        scrollPaneTextArea.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        add(mainPanel, BorderLayout.WEST);
+        add(eastPanel, BorderLayout.EAST);
+        add(southPanel, BorderLayout.SOUTH);
+    }
+    
+    @Override
+    public void windowOpened(WindowEvent we) {
+    }
+
+    @Override
+    public void windowClosing(WindowEvent we) {
+        try {
+            closeChatWindow();
+        } catch (IOException ex) {
+            dispose();
+        }
+    }
+
+    @Override
+    public void windowIconified(WindowEvent we) {
+    }
+
+    @Override
+    public void windowDeiconified(WindowEvent we) {
+    }
+
+    @Override
+    public void windowActivated(WindowEvent we) {
+    }
+
+    @Override
+    public void windowDeactivated(WindowEvent we) {
+    }
+
+    @Override
+    public void windowClosed(WindowEvent we) {
+    }
+    
+}
+
+// PingThread är en viktig klass som hanterar en tråd som agerar som 'lyssnare'
+
+// syftet är att - då du skapar en server - så kommer den servern att lyssna efter anslutningar
+// detta avlyssnandet görs i den här klassen, vilket görs på en separat tråd, så att programmet aldrig fryser
+// se ex.vis run-metoden som hanterar alla inkommande anslutningar
+// - se klassen Server för hur själva servern fungerar med alla arrays
+class PingThread extends Thread {
+
+    private ServerSocket myServerSocket;
+    private final Server myServer;
+
+    PingThread(int port, Server server) {
+        try {
+            myServerSocket = new ServerSocket(port);
+        } catch (IOException ex) {
+            Logger.getLogger(PingThread.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Try another port");
+        }
+        myServer = server;
+    }
+
+    void closeServer() throws IOException {
+        stop();
+        myServerSocket.close();
+    }
+
+    @Override
+    public void run() {
+        while (true) {
+            try {
+                Socket mySocket = myServerSocket.accept();
+                myServer.connections++;
+                ObjectOutputStream newOS = new ObjectOutputStream(mySocket.getOutputStream());
+                newOS.writeObject(myServer.welcomeMessage);
+                myServer.OUTPUT_STREAM_ARRAY_LIST.add(newOS);
+                ObjectInputStream OBJECT_INPUT_STREAM = new ObjectInputStream(mySocket.getInputStream());
+                ObjectStreamManager OSM = new ObjectStreamManager((int) (Math.random() * 1000), OBJECT_INPUT_STREAM, myServer);
+                myServer.STREAM_MANAGER_ARRAY_LIST.add(OSM);
+            } catch (IOException ex) {
+                Logger.getLogger(PingThread.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+}
+
+// kommer inte riktigt ihåg vad den här gör
+// men är rätt säker på att den behövs för meny-systemet
+// alltså ej särskilt viktig för hjälplärare
+
+class ContactCellRenderer extends DefaultListCellRenderer {
+    
+    public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+        if (value instanceof Contact) {
+            value = ((Contact) value).getName();
+        }
+        super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+        return this;
+    }
+    
+}
+
