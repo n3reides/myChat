@@ -1,4 +1,4 @@
-/*
+a/*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -38,8 +38,11 @@ import javax.swing.Timer;
 // Syftet med servern är att hantera alla inkommande meddelanden, anslutningar och så vidare
 // Servern ska också skicka vidare alla dessa, i princip omedelbart, när det tas emot
 // Detta görs genom olika ArrayLists som hanterar inputs(StreamManagers från Parrow), outputs(OutputStreams), Sockets och Contacts
-// Notera att servern körs på en separat tråd från resten av programmet via PingThread
-// Detta betyder att en tråd ligger och lyssnar på allt inkommande utan att påverka resten av programmet (i princip)
+// Notera att serverSocket körs på en separat tråd från resten av programmet via PingThread
+// Detta betyder att en tråd ligger och lyssnar på alla inkommande anslutningar
+// detta utan att påverka resten av programmet (i princip)
+
+// när någon ansluter till serverSocketen kommer alltså de arraylists som ligger i Server att uppdateras automagiskt
 
 
 class Server extends JPanel implements ObjectStreamListener, ActionListener, WindowListener {
