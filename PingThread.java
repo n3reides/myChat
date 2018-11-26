@@ -35,6 +35,15 @@ class PingThread extends Thread {
         myServerSocket.close();
     }
 
+    // då denna metod ska lyssna efter anslutningar så ligger den här run()-metoden och provar att acceptera nya anslutningar
+    // om en anslutning sker så accepterar serverSocket detta och skapar en Socket för den anslutningen
+    // en ny outputStream skapas för denna Socket
+    // Denna outputStream läggs till i arraylisten som hanterar outputStreams i Server
+    // det skapas också en ny StreamManager för denna Socket som hanterar alla inkomna objekt från denna anslutning
+    // denna StreamManager läggs till i arraylisten som hanterar StreamManagers i Server
+    // allt som läggs till här hanteras alltså bara EN gång i en här klassen, och alltså endast en gång på den här tråden
+    // själva uppkopplingen hanteras alltså sedan i Servern! och den här tråden fortsätter lyssna efter inkommande anslutningar
+    
     @Override
     public void run() {
         while (true) {
