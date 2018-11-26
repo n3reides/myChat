@@ -264,7 +264,6 @@ class Server extends JPanel implements ObjectStreamListener, ActionListener, Win
     }
 
     // Det här här vi lyssnar efter inkommande meddelande
-    // Kom ihåg att detta görs via PingThread! så det sker kontinuerligt
     // syftet med lyssnarmetoden är att avgöra huruvida det är en ny connection eller ett inkommande meddelande
     // eller mer specifikt, vilken typ av Object som har mottagits, om det är en String eller en Contact
 
